@@ -14,19 +14,34 @@ data = """\
 def go(lines, part):
 	result = 0
 
+	def repeating(s, n):
+		if len(s) % n != 0:
+			return False
+		i = len(s) // n
+		return all(s[0:i] == s[i * j:i * j + i] for j in range(1, n))
+
 	ranges = lines[0].split(',')
 	for r in ranges:
-		#print(r)
+		#print('    ', r)
 		a,b = map(int, r.split('-'))
 		for i in range(a, b + 1):
 			s = str(i)
-			j = len(s)
-			if j & 1 == 0 and s[:j // 2] == s[-(j // 2):]:
-				result += i
+			if part == 1:
+				if repeating(s, 2):
+					result += i
+					#print(i, 'contains repeat with factor', 2)
+			else:
+				for j in range(2, len(s) + 1):
+					if repeating(s, j):
+						#print(i, 'contains repeat with factor', j)
+						result += i
+						break
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) == 1227775554)
-assert(go(data, 1) == 52316131093)
+#assert(go(testData, 1) == 1227775554)
+#assert(go(data, 1) == 52316131093)
+assert(go(testData, 2) == 4174379265)
+assert(go(data, 2) == 69564213293)
