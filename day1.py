@@ -4105,22 +4105,28 @@ def go(lines, part):
 	crosses = 0
 
 	for line in lines:
-		args = parse.parse("{direction:1}{amount:d}", line)
-		direction = args['direction']
-		amount = args['amount']
+		direction,amount = parse.parse("{:1}{:d}", line)
 
-		dial += amount if direction == 'R' else -amount
+		while amount != 0:
+			amount -= 1
 
-		while dial < 0:
-			dial += 100
-			crosses += 1
-		while dial >= 100:
-			dial -= 100
-			crosses += 1
+			oldDial = dial
+			if direction == 'R':
+				dial += 1
+			else:
+				dial -= 1
+
+			if dial == -1:
+				dial = 99
+			elif dial == 100:
+				dial = 0
+
+			if dial == 0 and oldDial != 0:
+				crosses += 1
 		
 		if dial == 0:
 			ends += 1
-	
+		
 	print('ends', ends, 'crosses', crosses)
 	return ends if part == 1 else crosses
 
@@ -4128,4 +4134,4 @@ def go(lines, part):
 assert(go(testData, 1) == 3)
 assert(go(data, 1) == 962)
 assert(go(testData, 2) == 6)
-assert(go(data, 2) >= 0)
+assert(go(data, 2) == 5782)
