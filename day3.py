@@ -228,7 +228,6 @@ def go(lines, part):
 
 		bAfter = b[largestIndex + 1:]
 		largestAfter = max(bAfter)
-		#largestAfterIndex = bAfter.index(largestAfter)
 
 		#print(largest, largestAfter)
 		result += largest * 10 + largestAfter
