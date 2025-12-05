@@ -1,5 +1,6 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+# This may be the crudest possible solution: iterate every single step.
 #-------------------------------------------------------------
 import parse
 

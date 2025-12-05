@@ -1,5 +1,8 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+# The highest possible number can always be found by iteratively
+# selecting the largest digit that still leaves enough digits in
+# the array for the remaining number of digits.
 #-------------------------------------------------------------
 import parse
 

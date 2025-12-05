@@ -1,5 +1,11 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+# This might be optimized by checking the smallest repeat lengths
+# first, and knowing that if there's no repeat with length N,
+# there can't be one with length N * 2, etc.
+# But the numbers are so short that it shouldn't make much difference.
+# A better optimization would reduce the number of integers checked,
+# by skipping those that can't possibly have repeats. Not sure how...
 #-------------------------------------------------------------
 import parse
 
