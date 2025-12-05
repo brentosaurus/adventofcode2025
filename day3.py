@@ -221,20 +221,22 @@ def go(lines, part):
 	for line in lines:
 		banks.append(list(map(int, line)))
 	
-	for b in banks:
-
-		largest = max(b[:-1])
+	def findMaxSequence(b, digitsToFind):
+		if digitsToFind == 0:
+			return 0
+		indexLimit = len(b) - digitsToFind + 1
+		largest = max(b[:indexLimit])
 		largestIndex = b.index(largest)
+		return (largest * 10 ** (digitsToFind - 1)) + findMaxSequence(b[largestIndex + 1:], digitsToFind - 1)
 
-		bAfter = b[largestIndex + 1:]
-		largestAfter = max(bAfter)
-
-		#print(largest, largestAfter)
-		result += largest * 10 + largestAfter
+	for b in banks:
+		result += findMaxSequence(b, 2 if part == 1 else 12)
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
 assert(go(testData, 1) == 357)
-assert(go(data, 1) >= 0)
+assert(go(data, 1) == 17408)
+assert(go(testData, 2) == 3121910778619)
+assert(go(data, 2) == 172740584266849)
