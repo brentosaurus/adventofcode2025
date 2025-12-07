@@ -1,5 +1,6 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+# This one is straightforward. No major optimizations needed.
 #-------------------------------------------------------------
 import parse
 
@@ -164,7 +165,7 @@ def go(lines, part):
 
 	g = []
 	for line in lines:
-		g.append(line.strip())
+		g.append([c for c in line.strip()])	# convert string to array so we can modify it
 
 	def adjacentCount(r, c):
 		nonlocal g
@@ -179,19 +180,24 @@ def go(lines, part):
 				result += 1
 		return result
 
-	print(g)
-
 	result = 0
-	for row in range(len(g)):
-		for col in range(len(g[0])):
-			if g[row][col] == '@':
-				if adjacentCount(row, col) < 4:
-					#print(f"row {row} col {col} adjacentCount {adjacentCount(row, col)}")
-					result += 1
+	removedAny = True		# just to get into the loop the first time
+	while removedAny:
+		removedAny = False
+		for row in range(len(g)):
+			for col in range(len(g[0])):
+				if g[row][col] == '@':
+					if adjacentCount(row, col) < 4:
+						result += 1
+						if part == 2:
+							g[row][col] = '.'
+							removedAny = True
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
 assert(go(testData, 1) == 13)
-assert(go(data, 1) >= 0)
+assert(go(data, 1) == 1578)
+assert(go(testData, 2) == 43)
+assert(go(data, 2) == 10132)
