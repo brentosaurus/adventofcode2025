@@ -30,16 +30,17 @@ def go(lines, part):
 		problems.append([lines[j][i] for j in range(len(lines))])
 
 	result = 0
-
 	for p in problems:
+
+		operator = p[-1]
 		numbers = list(map(int, p[:-1]))
-		op = p[-1]
-		if op == '+':
+
+		if operator == '+':
 			i = sum(numbers)
-		elif op == '*':
+		elif operator == '*':
 			i = math.prod(numbers)
 		else:
-			raise SystemExit("Unknown operator: " + op)
+			raise SystemExit("Unknown operator: " + operator)
 		result += i
 
 	print(result)
