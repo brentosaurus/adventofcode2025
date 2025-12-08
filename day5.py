@@ -1205,6 +1205,7 @@ data = """\
 #-------------------------------------------------------------
 def go(lines, part):
 
+	#--- read all the ranges, then a blank line, then all the IDs
 	ranges = []
 	ids = []
 	readingRanges = True
@@ -1216,16 +1217,30 @@ def go(lines, part):
 			ranges.append((int(a), int(b)))
 		else:
 			ids.append(int(line))
-	# print(ranges)
-	# print('-----')
-	# print(ids)
 
-	result = 0
-	for id in ids:
-		for range in ranges:
-			if range[0] <= id <= range[1]:
-				result += 1
-				break
+	if part == 1:
+		#--- result will be the total number of IDs in any range
+		result = 0
+		for id in ids:
+			result += any(r[0] <= id <= r[1] for r in ranges)
+	else:
+		#--- sort ranges in order of their min value
+		ranges.sort(key=lambda x: x[0])
+
+		#--- merge overlapping ranges
+		i = 0
+		while i < len(ranges) - 1:
+			#--- if current range is entirely before next range, move to next
+			if ranges[i][1] < ranges[i + 1][0]:
+				i += 1
+			#--- if current range overlaps next range, merge them
+			else:
+				r = (ranges[i][0], max(ranges[i][1], ranges[i + 1][1]))
+				ranges[i] = r
+				del ranges[i + 1]
+
+		#--- result is the total number of IDs in all ranges (simple sum of their lengths, now)
+		result = sum(r[1] + 1 - r[0] for r in ranges)
 
 	print(result)
 	return result
@@ -1233,3 +1248,5 @@ def go(lines, part):
 #-------------------------------------------------------------
 assert(go(testData, 1) == 3)
 assert(go(data, 1) == 761)
+assert(go(testData, 2) == 14)
+assert(go(data, 2) == 345755049374932)
