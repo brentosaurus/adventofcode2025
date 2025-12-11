@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, math
+import parse, math, copy
 
 testData = """\
 123 328  51 64 
@@ -21,32 +21,52 @@ data = """\
 #-------------------------------------------------------------
 def go(lines, part):
 
-	for i in range(len(lines)):
-		lines[i] = lines[i].split()
+	if part == 1:
 
-	numProblems = len(lines[0])
-	problems = []
-	for i in range(numProblems):
-		problems.append([lines[j][i] for j in range(len(lines))])
+		lines2 = copy.deepcopy(lines)
 
-	result = 0
-	for p in problems:
+		for i in range(len(lines2)):
+			lines2[i] = lines2[i].split()
 
-		operator = p[-1]
-		numbers = list(map(int, p[:-1]))
+		numProblems = len(lines2[0])
+		problems = []
+		for i in range(numProblems):
+			problems.append([lines2[j][i] for j in range(len(lines2))])
 
-		if operator == '+':
-			i = sum(numbers)
-		elif operator == '*':
-			i = math.prod(numbers)
-		else:
-			raise SystemExit("Unknown operator: " + operator)
-		result += i
+		result = 0
+		for p in problems:
+
+			operator = p[-1]
+			numbers = list(map(int, p[:-1]))
+
+			if operator == '+':
+				i = sum(numbers)
+			elif operator == '*':
+				i = math.prod(numbers)
+			else:
+				raise SystemExit("Unknown operator: " + operator)
+			result += i
+
+	else:
+		result = 0
+		problem = []
+		for col in reversed(range(len(lines[0]))):
+			s = ''
+			for row in range(len(lines) - 1):
+				s += lines[row][col]
+			problem.append(s)
+			if lines[-1][col] == '*':
+				result += math.prod([int(w) for w in problem if not w.isspace()])
+				problem = []
+			elif lines[-1][col] == '+':
+				result += sum([int(w) for w in problem if not w.isspace()])
+				problem = []
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 1) == 4277556)
-#assert(go(data, 1) == 4878670269096)
-assert(go(testData, 2) >= 0)
+assert(go(testData, 1) == 4277556)
+assert(go(data, 1) == 4878670269096)
+assert(go(testData, 2) == 3263827)
+assert(go(data, 2) == 8674740488592)
