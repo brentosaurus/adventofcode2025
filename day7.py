@@ -1,7 +1,8 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+# The only optimization needed was in part 2: caching the results for subtrees.
 #-------------------------------------------------------------
-import parse
+import functools
 
 testData = """\
 .......S.......
@@ -170,11 +171,8 @@ data = """\
 #-------------------------------------------------------------
 def go(lines, part):
 
-	allBeams = set()
-	splits = 0
-
-	def beam(r, c):
-		nonlocal lines, allBeams, splits
+	def calculateSplits(allBeams, r, c):
+		nonlocal lines
 
 		while True:
 			if (r,c) in allBeams:
@@ -182,18 +180,32 @@ def go(lines, part):
 			allBeams.add((r,c))
 
 			if r >= len(lines):
-				return 1
+				return 0
 			if lines[r][c] == '^':
-				splits += 1
-				return beam(r, c - 1) + beam(r, c + 1)
+				return calculateSplits(allBeams, r, c - 1) + calculateSplits(allBeams, r, c + 1) + 1
 			r += 1
 
-	beam(0, lines[0].index('S'))
-	result = splits
+	@functools.cache
+	def calculateTimelines(r, c):
+		nonlocal lines
+
+		while True:
+			if r >= len(lines):
+				return 1
+			if lines[r][c] == '^':
+				return calculateTimelines(r, c - 1) + calculateTimelines(r, c + 1)
+			r += 1
+
+	if part == 1:
+		result = calculateSplits(set(), 0, lines[0].index('S'))
+	else:
+		result = calculateTimelines(0, lines[0].index('S'))
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
 assert(go(testData, 1) == 21)
-assert(go(data, 1) >= 0)
+assert(go(data, 1) == 1613)
+assert(go(testData, 2) == 40)
+assert(go(data, 2) == 48021610271997)
