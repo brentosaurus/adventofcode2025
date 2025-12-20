@@ -1040,13 +1040,13 @@ class Junction:
 class Connection:
 	j1: Junction
 	j2: Junction
-	dist: int
+	dist: int	# TODO: revert back to int
 
 #-------------------------------------------------------------
 def go(lines, numConnections, part):
 
 	junctions = []
-	nextCircuit = 0
+	nextCircuit = 1
 	for line in lines:
 		x,y,z = map(int, line.split(','))
 		junctions.append(Junction(x, y, z, nextCircuit))
@@ -1056,33 +1056,36 @@ def go(lines, numConnections, part):
 	connections = []
 	for j1,j2 in itertools.combinations(junctions, 2):
 		dist = math.sqrt(abs(j1.x - j2.x) ** 2 + abs(j1.y - j2.y) ** 2 + abs(j1.z - j2.z) ** 2)
+		#dist = math.dist((j1.x, j1.y, j1.z), (j2.x, j2.y, j2.z))
 		connections.append(Connection(j1, j2, dist))
 
-	#--- sort connections by distance and take the first numConnections
+	#--- get the first numConnections shortest connections
 	connections.sort(key=lambda c: c.dist)
 	connections = connections[:numConnections]
-	print('-------- CONNECTIONS')
-	for c in connections:
-		print(c)
+	#print('-------- CONNECTIONS')
+	#for c in connections:
+	#	print(c)
 
 	#--- create circuits by connecting junctions
 	for c in connections:
+		fromCircuit = c.j2.circuit
+		toCircuit = c.j1.circuit
 		for j in junctions:
-			if j.circuit == c.j2.circuit:
-				j.circuit = c.j1.circuit
-	print('-------- JUNCTIONS')
-	for j in junctions:
-		print(j)
+			if j.circuit == fromCircuit:
+				j.circuit = toCircuit
+	#print('-------- JUNCTIONS')
+	#for j in junctions:
+	#	print(j)
 
 	circuitIds = [j.circuit for j in junctions]
-	print('-------- CIRCUIT IDS')
-	print(circuitIds)
+	#print('-------- CIRCUIT IDS')
+	#print(circuitIds)
 	circuitCounts = collections.Counter(circuitIds)
-	print('-------- CIRCUIT COUNTS')
-	print(circuitCounts)
+	#print('-------- CIRCUIT COUNTS')
+	#print(circuitCounts)
 	frequent = circuitCounts.most_common(3)
-	print('-------- FREQUENT')
-	print(frequent)
+	#print('-------- FREQUENT')
+	#print(frequent)
 	result = math.prod(count for id,count in frequent)
 
 	print(result)
@@ -1090,4 +1093,4 @@ def go(lines, numConnections, part):
 
 #-------------------------------------------------------------
 assert(go(testData, 10, 1) == 40)
-assert(go(data, 1000, 1) >= 0)
+assert(go(data, 1000, 1) == 54180)
