@@ -1061,36 +1061,52 @@ def go(lines, numConnections, part):
 
 	#--- get the first numConnections shortest connections
 	connections.sort(key=lambda c: c.dist)
-	connections = connections[:numConnections]
+	if numConnections != -1:
+		connections = connections[:numConnections]
 	#print('-------- CONNECTIONS')
 	#for c in connections:
 	#	print(c)
 
 	#--- create circuits by connecting junctions
+	lastPercent = -1
+	connectionsDone = 0
 	for c in connections:
+		connectionsDone += 1
+		percent = int(100 * connectionsDone / len(connections))
+		if lastPercent < percent:
+			lastPercent = percent
+			print(f'{percent}%')
+
 		fromCircuit = c.j2.circuit
 		toCircuit = c.j1.circuit
 		for j in junctions:
 			if j.circuit == fromCircuit:
 				j.circuit = toCircuit
+		if part == 2:
+			if all(junctions[0].circuit == j.circuit for j in junctions):
+				result = c.j1.x * c.j2.x
+				break
 	#print('-------- JUNCTIONS')
 	#for j in junctions:
 	#	print(j)
 
-	circuitIds = [j.circuit for j in junctions]
-	#print('-------- CIRCUIT IDS')
-	#print(circuitIds)
-	circuitCounts = collections.Counter(circuitIds)
-	#print('-------- CIRCUIT COUNTS')
-	#print(circuitCounts)
-	frequent = circuitCounts.most_common(3)
-	#print('-------- FREQUENT')
-	#print(frequent)
-	result = math.prod(count for id,count in frequent)
+	if part == 1:
+		circuitIds = [j.circuit for j in junctions]
+		#print('-------- CIRCUIT IDS')
+		#print(circuitIds)
+		circuitCounts = collections.Counter(circuitIds)
+		#print('-------- CIRCUIT COUNTS')
+		#print(circuitCounts)
+		frequent = circuitCounts.most_common(3)
+		#print('-------- FREQUENT')
+		#print(frequent)
+		result = math.prod(count for id,count in frequent)
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 10, 1) == 40)
-assert(go(data, 1000, 1) == 54180)
+#assert(go(testData, 10, 1) == 40)
+#assert(go(data, 1000, 1) == 54180)
+assert(go(testData, -1, 2) == 25272)
+assert(go(data, -1, 2) >= 0)
