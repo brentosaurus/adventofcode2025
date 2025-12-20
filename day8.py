@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, math, collections, itertools
+import dataclasses, math, collections, itertools
 
 testData = """\
 162,817,812
@@ -1055,7 +1055,7 @@ def go(lines, numConnections, part):
 	#--- create all possible connections between junctions
 	connections = []
 	for j1,j2 in itertools.combinations(junctions, 2):
-		dist = math.sqrt(abs(j1.x - j2.x) ** 2 + abs(j1.y - j2.y) ** 2 + abs(j1.z - j2.z) ** 2)
+		dist = int(math.sqrt(abs(j1.x - j2.x) ** 2 + abs(j1.y - j2.y) ** 2 + abs(j1.z - j2.z) ** 2))
 		connections.append(Connection(j1, j2, dist))
 
 	#--- get the first numConnections shortest connections
