@@ -1040,7 +1040,7 @@ class Junction:
 class Connection:
 	j1: Junction
 	j2: Junction
-	dist: int	# TODO: revert back to int
+	dist: int
 
 #-------------------------------------------------------------
 def go(lines, numConnections, part):
@@ -1056,57 +1056,39 @@ def go(lines, numConnections, part):
 	connections = []
 	for j1,j2 in itertools.combinations(junctions, 2):
 		dist = math.sqrt(abs(j1.x - j2.x) ** 2 + abs(j1.y - j2.y) ** 2 + abs(j1.z - j2.z) ** 2)
-		#dist = math.dist((j1.x, j1.y, j1.z), (j2.x, j2.y, j2.z))
 		connections.append(Connection(j1, j2, dist))
 
 	#--- get the first numConnections shortest connections
 	connections.sort(key=lambda c: c.dist)
 	if numConnections != -1:
 		connections = connections[:numConnections]
-	#print('-------- CONNECTIONS')
-	#for c in connections:
-	#	print(c)
 
 	#--- create circuits by connecting junctions
-	lastPercent = -1
-	connectionsDone = 0
 	for c in connections:
-		connectionsDone += 1
-		percent = int(100 * connectionsDone / len(connections))
-		if lastPercent < percent:
-			lastPercent = percent
-			print(f'{percent}%')
-
+		#--- need these variables so we don't overwrite the circuit values during the loop (oops!)
 		fromCircuit = c.j2.circuit
 		toCircuit = c.j1.circuit
 		for j in junctions:
 			if j.circuit == fromCircuit:
 				j.circuit = toCircuit
+			
+		#--- for part 2, exit when we've connected all junctions into one circuit
 		if part == 2:
 			if all(junctions[0].circuit == j.circuit for j in junctions):
 				result = c.j1.x * c.j2.x
 				break
-	#print('-------- JUNCTIONS')
-	#for j in junctions:
-	#	print(j)
 
 	if part == 1:
 		circuitIds = [j.circuit for j in junctions]
-		#print('-------- CIRCUIT IDS')
-		#print(circuitIds)
 		circuitCounts = collections.Counter(circuitIds)
-		#print('-------- CIRCUIT COUNTS')
-		#print(circuitCounts)
 		frequent = circuitCounts.most_common(3)
-		#print('-------- FREQUENT')
-		#print(frequent)
 		result = math.prod(count for id,count in frequent)
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 10, 1) == 40)
-#assert(go(data, 1000, 1) == 54180)
+assert(go(testData, 10, 1) == 40)
+assert(go(data, 1000, 1) == 54180)
 assert(go(testData, -1, 2) == 25272)
 assert(go(data, -1, 2) >= 0)
