@@ -1036,8 +1036,6 @@ class Junction:
 	z: int
 	circuit: int
 
-NO_CIRCUIT = -1	# no circuit
-
 @dataclasses.dataclass
 class Connection:
 	j1: Junction
@@ -1048,9 +1046,11 @@ class Connection:
 def go(lines, numConnections, part):
 
 	junctions = []
+	nextCircuit = 0
 	for line in lines:
 		x,y,z = map(int, line.split(','))
-		junctions.append(Junction(x, y, z, NO_CIRCUIT))
+		junctions.append(Junction(x, y, z, nextCircuit))
+		nextCircuit += 1
 
 	#--- create all possible connections between junctions
 	connections = []
@@ -1066,34 +1066,28 @@ def go(lines, numConnections, part):
 		print(c)
 
 	#--- create circuits by connecting junctions
-	nextCircuit = 0
 	for c in connections:
-		#--- if both are in a circuit, reassign all in one of the circuits to the other
-		if c.j1.circuit != NO_CIRCUIT and c.j2.circuit != NO_CIRCUIT:
-			for j in junctions:
-				if j.circuit == c.j2.circuit:
-					j.circuit = c.j1.circuit
-		#--- if one is in a circuit, add the other to it
-		elif c.j1.circuit != NO_CIRCUIT:
-			c.j2.circuit = c.j1.circuit
-		elif c.j2.circuit != NO_CIRCUIT:
-			c.j1.circuit = c.j2.circuit
-		#--- if neither is in a circuit, create a new one and add both to it
-		else:
-			c.j1.circuit = c.j2.circuit = nextCircuit
-			nextCircuit += 1
+		for j in junctions:
+			if j.circuit == c.j2.circuit:
+				j.circuit = c.j1.circuit
 	print('-------- JUNCTIONS')
 	for j in junctions:
 		print(j)
 
 	circuitIds = [j.circuit for j in junctions]
+	print('-------- CIRCUIT IDS')
+	print(circuitIds)
 	circuitCounts = collections.Counter(circuitIds)
+	print('-------- CIRCUIT COUNTS')
+	print(circuitCounts)
 	frequent = circuitCounts.most_common(3)
+	print('-------- FREQUENT')
+	print(frequent)
 	result = math.prod(count for id,count in frequent)
 
-	result = 0
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 10, 1) >= 0)
+assert(go(testData, 10, 1) == 40)
+assert(go(data, 1000, 1) >= 0)
