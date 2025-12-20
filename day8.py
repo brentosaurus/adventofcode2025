@@ -1,8 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, math
-from collections import Counter
+import parse, dataclasses, math, collections, itertools
 
 testData = """\
 162,817,812
@@ -1035,7 +1034,7 @@ class Junction:
 	x: int
 	y: int
 	z: int
-	c: int
+	circuit: int
 
 NO_CIRCUIT = -1	# no circuit
 
@@ -1046,47 +1045,49 @@ class Connection:
 	dist: int
 
 #-------------------------------------------------------------
-def go(lines, part):
+def go(lines, numConnections, part):
 
 	junctions = []
 	for line in lines:
 		x,y,z = map(int, line.split(','))
 		junctions.append(Junction(x, y, z, NO_CIRCUIT))
 
+	#--- create all possible connections between junctions
 	connections = []
-	for j in junctions:
-		closest = None
-		closestDist = 0
-		for j2 in junctions:
-			if j == j2:
-				continue
-			dist = abs(j.x - j2.x) + abs(j.y - j2.y) + abs(j.z - j2.z)
-			if closest is None or closestDist > dist:
-				closest = j2
-				closestDist = dist
-		print('closest to', j, 'is', closest, 'with dist', closestDist)
-		connections.append(Connection(j, closest, closestDist))
+	for j1,j2 in itertools.combinations(junctions, 2):
+		dist = math.sqrt(abs(j1.x - j2.x) ** 2 + abs(j1.y - j2.y) ** 2 + abs(j1.z - j2.z) ** 2)
+		connections.append(Connection(j1, j2, dist))
 
+	#--- sort connections by distance and take the first numConnections
+	connections.sort(key=lambda c: c.dist)
+	connections = connections[:numConnections]
+	print('-------- CONNECTIONS')
+	for c in connections:
+		print(c)
+
+	#--- create circuits by connecting junctions
 	nextCircuit = 0
-
+	for c in connections:
 		#--- if both are in a circuit, reassign all in one of the circuits to the other
-		if j.c != NO_CIRCUIT and closest.c != NO_CIRCUIT:
-			for j2 in junctions:
-				if j2.c == closest.c:
-					j2.c = j.c
+		if c.j1.circuit != NO_CIRCUIT and c.j2.circuit != NO_CIRCUIT:
+			for j in junctions:
+				if j.circuit == c.j2.circuit:
+					j.circuit = c.j1.circuit
 		#--- if one is in a circuit, add the other to it
-		elif j.c != NO_CIRCUIT:
-			closest.c = j.c
-		elif closest.c != NO_CIRCUIT:
-			j.c = closest.c
+		elif c.j1.circuit != NO_CIRCUIT:
+			c.j2.circuit = c.j1.circuit
+		elif c.j2.circuit != NO_CIRCUIT:
+			c.j1.circuit = c.j2.circuit
 		#--- if neither is in a circuit, create a new one and add both to it
 		else:
-			j.c = closest.c = nextCircuit
+			c.j1.circuit = c.j2.circuit = nextCircuit
 			nextCircuit += 1
-	print(junctions)
+	print('-------- JUNCTIONS')
+	for j in junctions:
+		print(j)
 
-	circuitIds = [j.c for j in junctions]
-	circuitCounts = Counter(circuitIds)
+	circuitIds = [j.circuit for j in junctions]
+	circuitCounts = collections.Counter(circuitIds)
 	frequent = circuitCounts.most_common(3)
 	result = math.prod(count for id,count in frequent)
 
@@ -1095,4 +1096,4 @@ def go(lines, part):
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) >= 0)
+assert(go(testData, 10, 1) >= 0)
