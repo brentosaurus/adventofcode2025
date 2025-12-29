@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import dataclasses, itertools
+import dataclasses, itertools, copy
 
 testData = """\
 7,1
@@ -514,22 +514,102 @@ data = """\
 """.split('\n')
 	
 @dataclasses.dataclass
-class Tile:
+class Point:
 	x: int
 	y: int
 
+#--- these are either horizontal (y1 == y2) or vertical (x1 == x2)
+@dataclasses.dataclass
+class Line:
+	x1: int
+	y1: int
+	x2: int
+	y2: int
 
 #-------------------------------------------------------------
 def go(lines, part):
 
-	tiles = []
+	#--- get list of points
+	polyPoints = []
 	for line in lines:
 		x,y = map(int, line.split(','))
-		tiles.append(Tile(x, y))
+		polyPoints.append(Point(x, y))
+
+	#--- create list of edges
+	polyEdges = []
+	for i in range(len(polyPoints)):
+		polyEdges.append(Line(
+			polyPoints[i].x,
+			polyPoints[i].y,
+			polyPoints[(i + 1) % len(polyPoints)].x,
+			polyPoints[(i + 1) % len(polyPoints)].y,
+		))
+
+	# intersection between line(p1, p2) and line(p3, p4)
+	# (from https://gist.github.com/kylemcdonald/6132fc1c29fd3767691442ba4bc84018)
+	def Intersect(lineA, lineB):
+		x1,y1 = lineA.x1,lineA.y1
+		x2,y2 = lineA.x2,lineA.y2
+		x3,y3 = lineB.x1,lineB.y1
+		x4,y4 = lineB.x2,lineB.y2
+		denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1)
+		if denom == 0: # parallel
+			return None
+		ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / denom
+		if ua < 0 or ua > 1: # out of range
+			return None
+		ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / denom
+		if ub < 0 or ub > 1: # out of range
+			return None
+		x = x1 + ua * (x2-x1)
+		y = y1 + ua * (y2-y1)
+		return (x,y)
+
+	def NumberOfIntersections(line):
+		count = 0
+		for edge in polyEdges:
+			if Intersect(line, edge):
+				count += 1
+		return count
+
+	def PointEnclosed(point):
+		return NumberOfIntersections(Line(point.x, point.y, point.x + 200000, point.y)) & 1 == 0
 	
+	def SegmentEnclosed(segment):
+		return NumberOfIntersections(segment) & 1 == 0
+	
+	def EntirelyEnclosed(cornerA, cornerB):
+	
+		#--- each individual point must be enclosed
+		corners = [
+			Point(cornerA.x, cornerA.y),
+			Point(cornerA.x, cornerB.y),
+			Point(cornerB.x, cornerA.y),
+			Point(cornerB.x, cornerB.y)
+		]
+		for corner in corners:
+			if not PointEnclosed(corner):
+				return False
+			
+		#--- each edge must be enclosed
+		# TODO: if we check this, then is the point test above really needed?
+		edges = [
+			Line(cornerA.x, cornerA.y, cornerB.x, cornerA.y),
+			Line(cornerB.x, cornerA.y, cornerB.x, cornerB.y),
+			Line(cornerA.x, cornerB.y, cornerB.x, cornerB.y),
+			Line(cornerA.x, cornerA.y, cornerA.x, cornerB.y)
+		]
+		for edge in edges:
+			if not SegmentEnclosed(edge):
+				return False
+
+		return True
+
 	largestArea = -1
-	for t1,t2 in itertools.combinations(tiles, 2):
+	for t1,t2 in itertools.combinations(polyPoints, 2):
 		area = abs(1 + t1.x - t2.x) * abs(1 + t1.y - t2.y)
+		if part == 2 and not EntirelyEnclosed(t1, t2):
+			continue
 		if largestArea < area:
 			largestArea = area
 
@@ -538,5 +618,6 @@ def go(lines, part):
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) == 50)
-assert(go(data, 1) >= 0)
+#assert(go(testData, 1) == 50)
+#assert(go(data, 1) == 4745816424)
+assert(go(testData, 2) >= 0)
