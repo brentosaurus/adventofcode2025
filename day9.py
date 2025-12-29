@@ -1,7 +1,8 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import dataclasses, itertools, copy
+import itertools, copy
+from shapely.geometry import Polygon, Point
 
 testData = """\
 7,1
@@ -513,111 +514,69 @@ data = """\
 97978,50350\
 """.split('\n')
 	
-@dataclasses.dataclass
-class Point:
-	x: int
-	y: int
-
-#--- these are either horizontal (y1 == y2) or vertical (x1 == x2)
-@dataclasses.dataclass
-class Line:
-	x1: int
-	y1: int
-	x2: int
-	y2: int
-
 #-------------------------------------------------------------
 def go(lines, part):
 
-	#--- get list of points
+	#--- read points and create a polygon
 	polyPoints = []
 	for line in lines:
 		x,y = map(int, line.split(','))
 		polyPoints.append(Point(x, y))
+	poly_coords = copy.deepcopy(polyPoints)
+	poly_coords.append(polyPoints[0])		# close the polygon
+	polygon = Polygon(poly_coords)
 
-	#--- create list of edges
-	polyEdges = []
-	for i in range(len(polyPoints)):
-		polyEdges.append(Line(
-			polyPoints[i].x,
-			polyPoints[i].y,
-			polyPoints[(i + 1) % len(polyPoints)].x,
-			polyPoints[(i + 1) % len(polyPoints)].y,
-		))
+	def is_rectangle_inside_polygon(rect_coords):
+		nonlocal polygon
+		"""
+		Determines if a rectangle is entirely inside a polygon, allowing edge intersection.
 
-	# intersection between line(p1, p2) and line(p3, p4)
-	# (from https://gist.github.com/kylemcdonald/6132fc1c29fd3767691442ba4bc84018)
-	def Intersect(lineA, lineB):
-		x1,y1 = lineA.x1,lineA.y1
-		x2,y2 = lineA.x2,lineA.y2
-		x3,y3 = lineB.x1,lineB.y1
-		x4,y4 = lineB.x2,lineB.y2
-		denom = (y4-y3)*(x2-x1) - (x4-x3)*(y2-y1)
-		if denom == 0: # parallel
-			return None
-		ua = ((x4-x3)*(y1-y3) - (y4-y3)*(x1-x3)) / denom
-		if ua < 0 or ua > 1: # out of range
-			return None
-		ub = ((x2-x1)*(y1-y3) - (y2-y1)*(x1-x3)) / denom
-		if ub < 0 or ub > 1: # out of range
-			return None
-		x = x1 + ua * (x2-x1)
-		y = y1 + ua * (y2-y1)
-		return (x,y)
+		Args:
+			rect_coords (list of tuples): Coordinates of the rectangle vertices (min 4 points).
+			poly_coords (list of tuples): Coordinates of the polygon vertices (min 3 points).
 
-	def NumberOfIntersections(line):
-		count = 0
-		for edge in polyEdges:
-			if Intersect(line, edge):
-				count += 1
-		return count
+		Returns:
+			bool: True if the rectangle is entirely inside the polygon (or on its boundary), False otherwise.
+		"""
+		# Create shapely Polygon objects
+		# Ensure polygons are closed (first and last point are the same)
+		if rect_coords[0] != rect_coords[-1]:
+			rect_coords.append(rect_coords[0])
+		#if poly_coords[0] != poly_coords[-1]:
+		#	poly_coords.append(poly_coords[0])
 
-	def PointEnclosed(point):
-		return NumberOfIntersections(Line(point.x, point.y, point.x + 200000, point.y)) & 1 == 0
-	
-	def SegmentEnclosed(segment):
-		return NumberOfIntersections(segment) & 1 == 0
-	
-	def EntirelyEnclosed(cornerA, cornerB):
-	
-		#--- each individual point must be enclosed
-		corners = [
-			Point(cornerA.x, cornerA.y),
-			Point(cornerA.x, cornerB.y),
-			Point(cornerB.x, cornerA.y),
-			Point(cornerB.x, cornerB.y)
-		]
-		for corner in corners:
-			if not PointEnclosed(corner):
-				return False
-			
-		#--- each edge must be enclosed
-		# TODO: if we check this, then is the point test above really needed?
-		edges = [
-			Line(cornerA.x, cornerA.y, cornerB.x, cornerA.y),
-			Line(cornerB.x, cornerA.y, cornerB.x, cornerB.y),
-			Line(cornerA.x, cornerB.y, cornerB.x, cornerB.y),
-			Line(cornerA.x, cornerA.y, cornerA.x, cornerB.y)
-		]
-		for edge in edges:
-			if not SegmentEnclosed(edge):
-				return False
+		rectangle = Polygon(rect_coords)
+		#polygon = Polygon(poly_coords)
 
-		return True
+		# Check if the rectangle is within the polygon
+		# The .within() method returns True if the object's boundary and interior
+		# intersect only with the interior of the other object (or its boundary).
+		# This satisfies the condition that intersecting edges is fine.
+		return rectangle.within(polygon)
 
 	largestArea = -1
-	for t1,t2 in itertools.combinations(polyPoints, 2):
-		area = abs(1 + t1.x - t2.x) * abs(1 + t1.y - t2.y)
-		if part == 2 and not EntirelyEnclosed(t1, t2):
-			continue
-		if largestArea < area:
-			largestArea = area
+	#for t1,t2 in itertools.combinations(polyPoints, 2):
+	for i1 in range(len(polyPoints)):
+		print(i1, 'of', len(polyPoints))
+		for i2 in range(i1 + 1, len(polyPoints)):
+			t1 = polyPoints[i1]
+			t2 = polyPoints[i2]
+			area = abs(1 + t1.x - t2.x) * abs(1 + t1.y - t2.y)
+			if largestArea < area:
+				rectanglePoints = [(t1.x,t1.y), (t2.x,t1.y), (t2.x,t2.y), (t1.x,t2.y)]
+				if part == 2 and not is_rectangle_inside_polygon(rectanglePoints):
+					continue
+				largestArea = area
 
-	result = largestArea
+	result = int(largestArea)
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 1) == 50)
-#assert(go(data, 1) == 4745816424)
-assert(go(testData, 2) >= 0)
+import time
+startTime = time.time()
+assert(go(testData, 1) == 50)
+assert(go(data, 1) == 4745816424)
+assert(go(testData, 2) == 24)
+#assert(go(data, 2) >= 0)
+print('time:', round(time.time() - startTime, 2), 'seconds')
