@@ -522,11 +522,12 @@ def go(lines, part):
 	for line in lines:
 		x,y = map(int, line.split(','))
 		polyPoints.append(Point(x, y))
+
 	poly_coords = copy.deepcopy(polyPoints)
 	poly_coords.append(polyPoints[0])		# close the polygon
 	polygon = Polygon(poly_coords)
 
-	def is_rectangle_inside_polygon(rect_coords):
+	def rectangle_inside_polygon(rect_coords):
 		nonlocal polygon
 		"""
 		Determines if a rectangle is entirely inside a polygon, allowing edge intersection.
@@ -538,20 +539,12 @@ def go(lines, part):
 		Returns:
 			bool: True if the rectangle is entirely inside the polygon (or on its boundary), False otherwise.
 		"""
-		# Create shapely Polygon objects
-		# Ensure polygons are closed (first and last point are the same)
-		if rect_coords[0] != rect_coords[-1]:
-			rect_coords.append(rect_coords[0])
-		#if poly_coords[0] != poly_coords[-1]:
-		#	poly_coords.append(poly_coords[0])
-
-		rectangle = Polygon(rect_coords)
-		#polygon = Polygon(poly_coords)
 
 		# Check if the rectangle is within the polygon
 		# The .within() method returns True if the object's boundary and interior
 		# intersect only with the interior of the other object (or its boundary).
 		# This satisfies the condition that intersecting edges is fine.
+		rectangle = Polygon(rect_coords)
 		return rectangle.within(polygon)
 
 	largestArea = -1
@@ -563,10 +556,9 @@ def go(lines, part):
 			t2 = polyPoints[i2]
 			area = abs(1 + t1.x - t2.x) * abs(1 + t1.y - t2.y)
 			if largestArea < area:
-				rectanglePoints = [(t1.x,t1.y), (t2.x,t1.y), (t2.x,t2.y), (t1.x,t2.y)]
-				if part == 2 and not is_rectangle_inside_polygon(rectanglePoints):
-					continue
-				largestArea = area
+				rectanglePoints = [(t1.x,t1.y), (t2.x,t1.y), (t2.x,t2.y), (t1.x,t2.y), (t1.x,t1.y)] # note that we 'close' the rectangle by repeating its first point
+				if part == 1 or rectangle_inside_polygon(rectanglePoints):
+					largestArea = area
 
 	result = int(largestArea)
 	print(result)
@@ -575,8 +567,8 @@ def go(lines, part):
 #-------------------------------------------------------------
 import time
 startTime = time.time()
-assert(go(testData, 1) == 50)
-assert(go(data, 1) == 4745816424)
-assert(go(testData, 2) == 24)
-#assert(go(data, 2) >= 0)
+#assert(go(testData, 1) == 50)
+#assert(go(data, 1) == 4745816424)
+#assert(go(testData, 2) == 24)
+assert(go(data, 2) >= 0)
 print('time:', round(time.time() - startTime, 2), 'seconds')
