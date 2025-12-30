@@ -3,6 +3,10 @@
 #-------------------------------------------------------------
 import itertools, copy
 from shapely.geometry import Polygon, Point
+import matplotlib.pyplot as plt
+from shapely.plotting import plot_polygon 
+from shapely.affinity import translate
+from shapely import union
 
 testData = """\
 7,1
@@ -527,6 +531,26 @@ def go(lines, part):
 	poly_coords.append(polyPoints[0])		# close the polygon
 	polygon = Polygon(poly_coords)
 
+	polygon2 = translate(polygon, xoff=1.0, yoff=0.0)
+	polygon3 = translate(polygon, xoff=0.0, yoff=1.0)
+	polygon4 = translate(polygon, xoff=1.0, yoff=1.0)
+	polygon = union(polygon, polygon2)
+	polygon = union(polygon, polygon3)
+	polygon = union(polygon, polygon4)
+
+	# Create a plot
+	fig, ax = plt.subplots()
+	mngr = plt.get_current_fig_manager()
+	# Format: "WidthxHeight+XPosition+YPosition"
+	mngr.window.wm_geometry("900x900+1600+200") 
+	#ax.set_title("Shapely Plotting Module Example")
+	ax.set_aspect('equal')
+
+	# Use the shapely plotting function
+	plot_polygon(polygon, ax=ax, add_points=True, color='red', alpha=0.5)
+	plt.show(block=False)
+
+
 	def rectangle_inside_polygon(rect_coords):
 		nonlocal polygon
 		"""
@@ -545,6 +569,7 @@ def go(lines, part):
 		# intersect only with the interior of the other object (or its boundary).
 		# This satisfies the condition that intersecting edges is fine.
 		rectangle = Polygon(rect_coords)
+		plot_polygon(rectangle, ax=ax, add_points=True, color='blue', alpha=0.2)
 		return rectangle.within(polygon)
 
 	largestArea = -1
@@ -560,6 +585,8 @@ def go(lines, part):
 				if part == 1 or rectangle_inside_polygon(rectanglePoints):
 					largestArea = area
 
+	plt.close()
+
 	result = int(largestArea)
 	print(result)
 	return result
@@ -567,8 +594,8 @@ def go(lines, part):
 #-------------------------------------------------------------
 import time
 startTime = time.time()
-#assert(go(testData, 1) == 50)
-#assert(go(data, 1) == 4745816424)
-#assert(go(testData, 2) == 24)
+assert(go(testData, 1) == 50)
+assert(go(data, 1) == 4745816424)
+assert(go(testData, 2) == 24)
 assert(go(data, 2) >= 0)
 print('time:', round(time.time() - startTime, 2), 'seconds')
