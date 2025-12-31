@@ -556,18 +556,14 @@ def go(lines, part):
 		lastRefreshTime = time.time()
 	largestArea = -1
 	for i1 in range(len(polyPoints)):
-		print(i1, 'of', len(polyPoints))
+		if i1 % 10 == 0:
+			print(i1, 'of', len(polyPoints))
 		for i2 in range(i1 + 1, len(polyPoints)):
 			t1 = polyPoints[i1]
 			t2 = polyPoints[i2]
 			area = (abs(t1.x - t2.x) + 1) * (abs(t1.y - t2.y) + 1)
 			if largestArea < area:
-				minX = max(t1.x, t2.x)
-				maxX = min(t1.x, t2.x)
-				minY = min(t1.y, t2.y)
-				maxY = max(t1.y, t2.y)
-				rectanglePoints = [(minX, minY), (maxX, minY), (maxX, maxY), (minX, maxY), (minX, minY)]
-				if part == 1 or rectangle_inside_polygon(rectanglePoints):
+				if part == 1 or rectangle_inside_polygon([(t1.x,t1.y), (t2.x,t1.y), (t2.x,t2.y), (t1.x,t2.y), (t1.x,t1.y)]):
 					largestArea = area
 			
 			if render:
