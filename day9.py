@@ -1,12 +1,9 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import itertools, copy
-from shapely.geometry import Polygon, Point
+import copy, numpy as np, time
 import matplotlib.pyplot as plt
-from shapely.plotting import plot_polygon 
-from shapely.affinity import translate
-from shapely import union
+import shapely, shapely.plotting, shapely.prepared
 
 testData = """\
 7,1
@@ -519,83 +516,76 @@ data = """\
 """.split('\n')
 	
 #-------------------------------------------------------------
+render = 0
+
 def go(lines, part):
 
 	#--- read points and create a polygon
 	polyPoints = []
 	for line in lines:
 		x,y = map(int, line.split(','))
-		polyPoints.append(Point(x, y))
+		polyPoints.append(shapely.geometry.Point(x, y))
 
 	poly_coords = copy.deepcopy(polyPoints)
-	poly_coords.append(polyPoints[0])		# close the polygon
-	polygon = Polygon(poly_coords)
+	original_polygon = shapely.geometry.Polygon(poly_coords)
+	polygon = shapely.prepared.prep(original_polygon)
 
-	polygon2 = translate(polygon, xoff=1.0, yoff=0.0)
-	polygon3 = translate(polygon, xoff=0.0, yoff=1.0)
-	polygon4 = translate(polygon, xoff=1.0, yoff=1.0)
-	polygon = union(polygon, polygon2)
-	polygon = union(polygon, polygon3)
-	polygon = union(polygon, polygon4)
+	#--- if requested, draw the polygon
+	if render:
+		plt.ion()
+		fig,ax = plt.subplots()
+		mngr = plt.get_current_fig_manager()
+		mngr.window.wm_geometry("900x900+1600+200") # Format: "WidthxHeight+XPosition+YPosition"
+		ax.set_aspect('equal')
+		shapely.plotting.plot_polygon(original_polygon, ax=ax, add_points=True, color='red', alpha=0.5)
+		plt.pause(0.01)
 
-	# Create a plot
-	fig, ax = plt.subplots()
-	mngr = plt.get_current_fig_manager()
-	# Format: "WidthxHeight+XPosition+YPosition"
-	mngr.window.wm_geometry("900x900+1600+200") 
-	#ax.set_title("Shapely Plotting Module Example")
-	ax.set_aspect('equal')
-
-	# Use the shapely plotting function
-	plot_polygon(polygon, ax=ax, add_points=True, color='red', alpha=0.5)
-	plt.show(block=False)
-
-
+	#--- check if given rect is entirely inside the polygon
 	def rectangle_inside_polygon(rect_coords):
 		nonlocal polygon
-		"""
-		Determines if a rectangle is entirely inside a polygon, allowing edge intersection.
+		rectangle = shapely.geometry.Polygon(rect_coords)
+		result = polygon.contains(rectangle)
+		if result and render:
+			color = (np.random.random(), np.random.random(), np.random.random())
+			shapely.plotting.plot_polygon(rectangle, ax=ax, add_points=True, color=color, alpha=0.2)
+			plt.pause(0.01)
+		return result
 
-		Args:
-			rect_coords (list of tuples): Coordinates of the rectangle vertices (min 4 points).
-			poly_coords (list of tuples): Coordinates of the polygon vertices (min 3 points).
-
-		Returns:
-			bool: True if the rectangle is entirely inside the polygon (or on its boundary), False otherwise.
-		"""
-
-		# Check if the rectangle is within the polygon
-		# The .within() method returns True if the object's boundary and interior
-		# intersect only with the interior of the other object (or its boundary).
-		# This satisfies the condition that intersecting edges is fine.
-		rectangle = Polygon(rect_coords)
-		plot_polygon(rectangle, ax=ax, add_points=True, color='blue', alpha=0.2)
-		return rectangle.within(polygon)
-
+	#--- check all possible rects (formed by 2 points) against the polygon
+	if render:
+		lastRefreshTime = time.time()
 	largestArea = -1
-	#for t1,t2 in itertools.combinations(polyPoints, 2):
 	for i1 in range(len(polyPoints)):
 		print(i1, 'of', len(polyPoints))
 		for i2 in range(i1 + 1, len(polyPoints)):
 			t1 = polyPoints[i1]
 			t2 = polyPoints[i2]
-			area = abs(1 + t1.x - t2.x) * abs(1 + t1.y - t2.y)
+			area = (abs(t1.x - t2.x) + 1) * (abs(t1.y - t2.y) + 1)
 			if largestArea < area:
-				rectanglePoints = [(t1.x,t1.y), (t2.x,t1.y), (t2.x,t2.y), (t1.x,t2.y), (t1.x,t1.y)] # note that we 'close' the rectangle by repeating its first point
+				minX = max(t1.x, t2.x)
+				maxX = min(t1.x, t2.x)
+				minY = min(t1.y, t2.y)
+				maxY = max(t1.y, t2.y)
+				rectanglePoints = [(minX, minY), (maxX, minY), (maxX, maxY), (minX, maxY), (minX, minY)]
 				if part == 1 or rectangle_inside_polygon(rectanglePoints):
 					largestArea = area
+			
+			if render:
+				curTime = time.time()
+				if lastRefreshTime < curTime - 0.1:
+					lastRefreshTime = curTime
+					plt.pause(0.01)
 
-	plt.close()
+	plt.close('all')
 
 	result = int(largestArea)
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-import time
 startTime = time.time()
 assert(go(testData, 1) == 50)
 assert(go(data, 1) == 4745816424)
 assert(go(testData, 2) == 24)
-assert(go(data, 2) >= 0)
+assert(go(data, 2) == 1351617690)
 print('time:', round(time.time() - startTime, 2), 'seconds')
