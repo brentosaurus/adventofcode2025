@@ -47,7 +47,7 @@ def go(lines, part):
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 1) == 1227775554)
-#assert(go(data, 1) == 52316131093)
+assert(go(testData, 1) == 1227775554)
+assert(go(data, 1) == 52316131093)
 assert(go(testData, 2) == 4174379265)
 assert(go(data, 2) == 69564213293)
