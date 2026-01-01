@@ -202,13 +202,12 @@ class MachineState:
 
 #-------------------------------------------------------------
 def solve(m):
-	lastTime = time.time()
+	#lastTime = time.time()
 	printInterval = 0
 	q = []
-	ms = MachineState([0] * len(m.goal), 0)
-	q.append(ms)
+	q.append(([0] * len(m.goal), 0))
 	while q:
-		ms = q.pop(0)
+		current,presses = q.pop(0)
 		#print('--------', m)
 
 		#if lastTime < time.time() - 1:
@@ -216,16 +215,16 @@ def solve(m):
 		printInterval += 1
 		if printInterval > 10000:
 			printInterval = 0
-			print('depth', ms.presses, 'q size', len(q))
+			print('depth', presses, 'q size', len(q))
 
-		if ms.current == m.goal:
-			return ms.presses
+		if current == m.goal:
+			return presses
 		
 		for w in m.wiring:
-			mms = MachineState(ms.current, ms.presses + 1)
+			newCurrent = copy.copy(current)
 			for i in w:
-				mms.current[i] = not mms.current[i]
-			q.append(mms)
+				newCurrent[i] = not newCurrent[i]
+			q.append((newCurrent, presses + 1))
 	
 	assert(False)
 
