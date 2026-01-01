@@ -192,8 +192,6 @@ data = """\
 @dataclasses.dataclass
 class Machine:
 	goal: List[int]
-	current: List[int]
-	presses: int
 	wiring: List[List[int]]
 	joltage: List[int]
 
@@ -202,29 +200,32 @@ class MachineState:
 	current: List[int]
 	presses: int
 
-
 #-------------------------------------------------------------
 def solve(m):
 	lastTime = time.time()
+	printInterval = 0
 	q = []
-	q.append(m)
+	ms = MachineState([0] * len(m.goal), 0)
+	q.append(ms)
 	while q:
-		m = q.pop(0)
+		ms = q.pop(0)
 		#print('--------', m)
 
-		if lastTime < time.time() - 1:
-			lastTime = time.time()
-			print('depth', m.presses, 'q size', len(q))
+		#if lastTime < time.time() - 1:
+		#	lastTime = time.time()
+		printInterval += 1
+		if printInterval > 10000:
+			printInterval = 0
+			print('depth', ms.presses, 'q size', len(q))
 
-		if m.current == m.goal:
-			return m.presses
+		if ms.current == m.goal:
+			return ms.presses
 		
 		for w in m.wiring:
-			mm = copy.deepcopy(m)
-			mm.presses += 1
+			mms = MachineState(ms.current, ms.presses + 1)
 			for i in w:
-				mm.current[i] = not mm.current[i]
-			q.append(mm)
+				mms.current[i] = not mms.current[i]
+			q.append(mms)
 	
 	assert(False)
 
@@ -268,7 +269,7 @@ def go(lines, part):
 		# print('curly values', curly_values)
 
 		goal_list = [c == '#' for c in square_str]
-		m = Machine(goal_list, [0] * len(goal_list), 0, paren_groups, curly_values)
+		m = Machine(goal_list, paren_groups, curly_values)
 		#print(m)
 		machines.append(m)
 
