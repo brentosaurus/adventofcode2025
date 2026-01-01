@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy
+import parse, dataclasses, copy, time
 from typing import List
 
 testData = """\
@@ -197,13 +197,25 @@ class Machine:
 	wiring: List[List[int]]
 	joltage: List[int]
 
+@dataclasses.dataclass
+class MachineState:
+	current: List[int]
+	presses: int
+
+
 #-------------------------------------------------------------
 def solve(m):
+	lastTime = time.time()
 	q = []
 	q.append(m)
 	while q:
 		m = q.pop(0)
 		#print('--------', m)
+
+		if lastTime < time.time() - 1:
+			lastTime = time.time()
+			print('depth', m.presses, 'q size', len(q))
+
 		if m.current == m.goal:
 			return m.presses
 		
@@ -262,6 +274,7 @@ def go(lines, part):
 
 	result = 0
 	for m in machines:
+		print(m)
 		i = solve(m)
 		print(i)
 		result += i
@@ -270,4 +283,5 @@ def go(lines, part):
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) >= 0)
+assert(go(testData, 1) == 7)
+assert(go(data, 1) >= 0)
