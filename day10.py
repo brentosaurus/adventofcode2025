@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses
+import parse, dataclasses, copy
 from typing import List
 
 testData = """\
@@ -198,17 +198,35 @@ class Machine:
 	joltage: List[int]
 
 #-------------------------------------------------------------
-def go(lines, part):
+def solve(m):
+	q = []
+	q.append(m)
+	while q:
+		m = q.pop(0)
+		#print('--------', m)
+		if m.current == m.goal:
+			return m.presses
+		
+		for w in m.wiring:
+			mm = copy.deepcopy(m)
+			mm.presses += 1
+			for i in w:
+				mm.current[i] = not mm.current[i]
+			q.append(mm)
+	
+	assert(False)
 
-	from parse import parse
+#-------------------------------------------------------------
+def go(lines, part):
 
 	#text = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
 
+	machines = []
 	for line in lines:
 
 		pattern = "[{square}] {parens} {{{curly}}}"
 
-		result = parse(pattern, line)
+		result = parse.parse(pattern, line)
 
 		if result is None:
 			raise ValueError("Input string did not match expected format")
@@ -217,31 +235,37 @@ def go(lines, part):
 		parens_str = result["parens"]
 		curly_str = result["curly"]
 
-		print("Square brackets:", square_str)
-		print("Parentheses sequence:", parens_str)
-		print("Curly brackets:", curly_str)
+		# print("Square brackets:", square_str)
+		# print("Parentheses sequence:", parens_str)
+		# print("Curly brackets:", curly_str)
 
 		# Now parse the individual parenthesized values
 		paren_groups = []
 		for chunk in parens_str.split():
 			# chunk looks like "(1,3)" or "(3)"
-			parsed = parse("({values})", chunk)
+			parsed = parse.parse("({values})", chunk)
 			if parsed is None:
 				raise ValueError(f"Invalid parenthesis group: {chunk}")
 
 			values = [int(v) for v in parsed["values"].split(",")]
 			paren_groups.append(values)
-		print('paren groups', paren_groups)
+		# print('paren groups', paren_groups)
 
 		# 3) Parse the curly-brace section into a list of ints
 		curly_values = [int(v) for v in curly_str.split(",")]
-		print('curly values', curly_values)
+		# print('curly values', curly_values)
 
 		goal_list = [c == '#' for c in square_str]
-		m = Machine(goal_list, 0, 0, paren_groups, curly_values)
-		print(m)
+		m = Machine(goal_list, [0] * len(goal_list), 0, paren_groups, curly_values)
+		#print(m)
+		machines.append(m)
 
 	result = 0
+	for m in machines:
+		i = solve(m)
+		print(i)
+		result += i
+
 	print(result)
 	return result
 
