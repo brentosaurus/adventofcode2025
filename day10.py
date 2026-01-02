@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy, time
+import parse, dataclasses, copy, time, collections
 from typing import List
 
 testData = """\
@@ -195,25 +195,16 @@ class Machine:
 	wiring: List[List[int]]
 	joltage: List[int]
 
-@dataclasses.dataclass
-class MachineState:
-	current: List[int]
-	presses: int
-
 #-------------------------------------------------------------
 def solve(m):
-	#lastTime = time.time()
 	printInterval = 0
-	q = []
-	q.append(([0] * len(m.goal), 0))
+	q = collections.deque()
+	q.append((0, 0))
 	while q:
-		current,presses = q.pop(0)
-		#print('--------', m)
+		current,presses = q.popleft()
 
-		#if lastTime < time.time() - 1:
-		#	lastTime = time.time()
 		printInterval += 1
-		if printInterval > 10000:
+		if printInterval > 100000:
 			printInterval = 0
 			print('depth', presses, 'q size', len(q))
 
@@ -221,9 +212,7 @@ def solve(m):
 			return presses
 		
 		for w in m.wiring:
-			newCurrent = copy.copy(current)
-			for i in w:
-				newCurrent[i] = not newCurrent[i]
+			newCurrent = current ^ w
 			q.append((newCurrent, presses + 1))
 	
 	assert(False)
@@ -231,7 +220,12 @@ def solve(m):
 #-------------------------------------------------------------
 def go(lines, part):
 
-	#text = "[.##.] (3) (1,3) (2) (2,3) (0,2) (0,1) {3,5,4,7}"
+	def bitwise(myList):
+		result = 0
+		for i,v in enumerate(myList):
+			if v:
+				result |= 1 << i
+		return result
 
 	machines = []
 	for line in lines:
@@ -247,10 +241,6 @@ def go(lines, part):
 		parens_str = result["parens"]
 		curly_str = result["curly"]
 
-		# print("Square brackets:", square_str)
-		# print("Parentheses sequence:", parens_str)
-		# print("Curly brackets:", curly_str)
-
 		# Now parse the individual parenthesized values
 		paren_groups = []
 		for chunk in parens_str.split():
@@ -260,21 +250,20 @@ def go(lines, part):
 				raise ValueError(f"Invalid parenthesis group: {chunk}")
 
 			values = [int(v) for v in parsed["values"].split(",")]
-			paren_groups.append(values)
-		# print('paren groups', paren_groups)
+			valuesBitwise = bitwise(values)
+			paren_groups.append(valuesBitwise)
 
 		# 3) Parse the curly-brace section into a list of ints
 		curly_values = [int(v) for v in curly_str.split(",")]
-		# print('curly values', curly_values)
 
 		goal_list = [c == '#' for c in square_str]
-		m = Machine(goal_list, paren_groups, curly_values)
-		#print(m)
+		goalBitwise = bitwise(goal_list)
+		m = Machine(goalBitwise, paren_groups, curly_values)
 		machines.append(m)
 
 	result = 0
-	for m in machines:
-		print(m)
+	for mIndex,m in enumerate(machines):
+		print(mIndex, '------------', m)
 		i = solve(m)
 		print(i)
 		result += i
