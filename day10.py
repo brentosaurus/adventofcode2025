@@ -302,7 +302,7 @@ def go(lines, part):
 		if part == 2:
 			goalList = curly_values
 		goalBitwise = bitwise([i for i,c in enumerate(square_str) if c == '#'])
-		print('goalList', goalList, 'goalBitwise', goalBitwise)
+		#print('goalList', goalList, 'goalBitwise', goalBitwise)
 		m = Machine(goalList, goalBitwise, wiringList, wiringBitwise, curly_values)
 		machines.append(m)
 
@@ -324,4 +324,5 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-assert(go(testData, 2) >= 0)
+#assert(go(testData, 2) == 33)
+assert(go(data, 2) >= 0)
