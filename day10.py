@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy, time, collections
+import parse, dataclasses, copy, time, collections, heapq
 from typing import List
 
 testData = """\
@@ -222,11 +222,20 @@ def solvePart1(m: Machine):
 #-------------------------------------------------------------
 def solvePart2(m: Machine):
 	printInterval = 0
-	q = collections.deque()
-	q.append(([0] * len(m.goal), 0))
+
+	#q = collections.deque()
+	#q.append(([0] * len(m.goal), 0))
+	q = []
+	priority = 0
+	current = [0] * len(m.goal)
+	presses = 0
+	heapq.heappush(q, (priority, (current,presses)))
+
 	bestSolution = 1000000
 	while q:
-		current,presses = q.pop()
+		#current,presses = q.pop()
+		priority,task = heapq.heappop(q)
+		current,presses = task
 
 		printInterval += 1
 		if printInterval > 100000:
@@ -253,7 +262,10 @@ def solvePart2(m: Machine):
 			newCurrent = copy.copy(current)
 			for i in w:
 				newCurrent[i] += 1
-			q.append((newCurrent, presses + 1))
+			#q.append((newCurrent, presses + 1))
+			priority = -sum(newCurrent)
+			task = (newCurrent,presses + 1)
+			heapq.heappush(q, (priority, task))
 	
 	return bestSolution
 
