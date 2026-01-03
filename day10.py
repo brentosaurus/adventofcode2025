@@ -191,12 +191,14 @@ data = """\
 
 @dataclasses.dataclass
 class Machine:
-	goal: int
-	wiring: List[int]
+	goalList: List[int]
+	goalBitwise: int
+	wiring: List[List[int]]
+	wiringBitwise: List[int]
 	joltage: List[int]
 
 #-------------------------------------------------------------
-def solve(m):
+def solveBitwise(m: Machine):
 	printInterval = 0
 	q = collections.deque()
 	q.append((0, 0))
@@ -208,12 +210,44 @@ def solve(m):
 			printInterval = 0
 			print('depth', presses, 'q size', len(q))
 
-		if current == m.goal:
+		if current == m.goalBitwise:
 			return presses
 		
-		for w in m.wiring:
+		for w in m.wiringBitwise:
 			newCurrent = current ^ w
 			q.append((newCurrent, presses + 1))
+	
+	assert(False)
+
+#-------------------------------------------------------------
+def solve(m: Machine, part: int):
+	printInterval = 0
+	q = collections.deque()
+	q.append(([0] * len(m.goalList), 0))
+	while q:
+		current,presses = q.popleft()
+
+		printInterval += 1
+		if printInterval > 100000:
+			printInterval = 0
+			print('depth', presses, 'q size', len(q))
+
+		if current == m.goalList:
+			return presses
+		for i in range(len(current)):
+			if current[i] > m.goalList[i]:
+				continue
+		
+		for w in m.wiring:
+			newCurrent = copy.copy(current)
+			if part == 1:
+				for i in w:
+					newCurrent[i] ^= 1
+				q.append((newCurrent, presses + 1))
+			else:
+				for i in w:
+					newCurrent[i] += 1
+				q.append((newCurrent, presses + 1))
 	
 	assert(False)
 
@@ -242,7 +276,8 @@ def go(lines, part):
 		curly_str = result["curly"]
 
 		# Now parse the individual parenthesized values
-		paren_groups = []
+		wiringList = []
+		wiringBitwise = []
 		for chunk in parens_str.split():
 			# chunk looks like "(1,3)" or "(3)"
 			parsed = parse.parse("({values})", chunk)
@@ -250,28 +285,44 @@ def go(lines, part):
 				raise ValueError(f"Invalid parenthesis group: {chunk}")
 
 			values = [int(v) for v in parsed["values"].split(",")]
+			wiringList.append(values)
 			valuesBitwise = bitwise(values)
-			paren_groups.append(valuesBitwise)
+			wiringBitwise.append(valuesBitwise)
 
 		# 3) Parse the curly-brace section into a list of ints
 		curly_values = [int(v) for v in curly_str.split(",")]
 
-		goal_list = [i for i,c in enumerate(square_str) if c == '#']
-		goalBitwise = bitwise(goal_list)
-		#print('goalBitwise', goalBitwise)
-		m = Machine(goalBitwise, paren_groups, curly_values)
+		goalList = [c == '#' for c in square_str]
+		goalBitwise = bitwise([i for i,c in enumerate(square_str) if c == '#'])
+		print('goalList', goalList, 'goalBitwise', goalBitwise)
+		m = Machine(goalList, goalBitwise, wiringList, wiringBitwise, curly_values)
 		machines.append(m)
 
 	result = 0
+	bitwiseTime = listwiseTime = 0
 	for mIndex,m in enumerate(machines):
 		print(mIndex, '------------', m)
-		i = solve(m)
+		if part == 1:
+			t = time.time()
+			i = solveBitwise(m)
+			bitwiseTime += time.time() - t
+			print('bitwise solution is', i)
+		t = time.time()
+		j = solve(m, part)
+		listwiseTime += time.time() - t
+		print('listwise solution is', j)
+		if part == 1:
+			assert(i == j)
 		print(i)
 		result += i
+		if part == 1:
+			print('total bitwise time', bitwiseTime)
+		print('total listwise time', listwiseTime)
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
-assert(go(data, 1) >= 0)
+#assert(go(data, 1) == 466)
+assert(go(testData, 2) >= 0)
