@@ -251,10 +251,13 @@ def solvePart2(m: Machine):
 			continue
 
 		possible = True
+		v = 0
 		for i in range(len(current)):
-			if current[i] > m.goal[i]:
+			diff = m.goal[i] - current[i]
+			if diff < 0:
 				possible = False
 				break
+			v += diff
 		if not possible:
 			continue
 		
@@ -263,7 +266,7 @@ def solvePart2(m: Machine):
 			for i in w:
 				newCurrent[i] += 1
 			#q.append((newCurrent, presses + 1))
-			priority = -sum(newCurrent)
+			priority = v
 			task = (newCurrent,presses + 1)
 			heapq.heappush(q, (priority, task))
 	
