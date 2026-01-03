@@ -226,7 +226,7 @@ def solvePart2(m: Machine):
 	q.append(([0] * len(m.goal), 0))
 	bestSolution = 1000000
 	while q:
-		current,presses = q.popleft()
+		current,presses = q.pop()
 
 		printInterval += 1
 		if printInterval > 100000:
@@ -238,7 +238,7 @@ def solvePart2(m: Machine):
 				print('new best solution', presses)
 				bestSolution = presses
 
-		if presses >= bestSolution:
+		if presses >= bestSolution - 1:
 			continue
 
 		possible = True
@@ -313,7 +313,7 @@ def go(lines, part):
 		if part == 1:
 			i = solvePart1(m)
 		else:
-			i = solvePart2(m, part)
+			i = solvePart2(m)
 
 		print(i)
 		result += i
@@ -322,6 +322,6 @@ def go(lines, part):
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) == 7)
-assert(go(data, 1) == 466)
-#assert(go(testData, 2) >= 0)
+#assert(go(testData, 1) == 7)
+#assert(go(data, 1) == 466)
+assert(go(testData, 2) >= 0)
