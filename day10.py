@@ -191,14 +191,14 @@ data = """\
 
 @dataclasses.dataclass
 class Machine:
-	goalList: List[int]
+	goal: List[int]
 	goalBitwise: int
 	wiring: List[List[int]]
 	wiringBitwise: List[int]
 	joltage: List[int]
 
 #-------------------------------------------------------------
-def solveBitwise(m: Machine):
+def solvePart1(m: Machine):
 	printInterval = 0
 	q = collections.deque()
 	q.append((0, 0))
@@ -220,10 +220,11 @@ def solveBitwise(m: Machine):
 	assert(False)
 
 #-------------------------------------------------------------
-def solve(m: Machine, part: int):
+def solvePart2(m: Machine):
 	printInterval = 0
 	q = collections.deque()
-	q.append(([0] * len(m.goalList), 0))
+	q.append(([0] * len(m.goal), 0))
+	bestSolution = 1000000
 	while q:
 		current,presses = q.popleft()
 
@@ -232,24 +233,29 @@ def solve(m: Machine, part: int):
 			printInterval = 0
 			print('depth', presses, 'q size', len(q))
 
-		if current == m.goalList:
-			return presses
+		if current == m.goal:
+			if bestSolution > presses:
+				print('new best solution', presses)
+				bestSolution = presses
+
+		if presses >= bestSolution:
+			continue
+
+		possible = True
 		for i in range(len(current)):
-			if current[i] > m.goalList[i]:
-				continue
+			if current[i] > m.goal[i]:
+				possible = False
+				break
+		if not possible:
+			continue
 		
 		for w in m.wiring:
 			newCurrent = copy.copy(current)
-			if part == 1:
-				for i in w:
-					newCurrent[i] ^= 1
-				q.append((newCurrent, presses + 1))
-			else:
-				for i in w:
-					newCurrent[i] += 1
-				q.append((newCurrent, presses + 1))
+			for i in w:
+				newCurrent[i] += 1
+			q.append((newCurrent, presses + 1))
 	
-	assert(False)
+	return bestSolution
 
 #-------------------------------------------------------------
 def go(lines, part):
@@ -293,36 +299,29 @@ def go(lines, part):
 		curly_values = [int(v) for v in curly_str.split(",")]
 
 		goalList = [c == '#' for c in square_str]
+		if part == 2:
+			goalList = curly_values
 		goalBitwise = bitwise([i for i,c in enumerate(square_str) if c == '#'])
 		print('goalList', goalList, 'goalBitwise', goalBitwise)
 		m = Machine(goalList, goalBitwise, wiringList, wiringBitwise, curly_values)
 		machines.append(m)
 
 	result = 0
-	bitwiseTime = listwiseTime = 0
 	for mIndex,m in enumerate(machines):
 		print(mIndex, '------------', m)
+
 		if part == 1:
-			t = time.time()
-			i = solveBitwise(m)
-			bitwiseTime += time.time() - t
-			print('bitwise solution is', i)
-		t = time.time()
-		j = solve(m, part)
-		listwiseTime += time.time() - t
-		print('listwise solution is', j)
-		if part == 1:
-			assert(i == j)
+			i = solvePart1(m)
+		else:
+			i = solvePart2(m, part)
+
 		print(i)
 		result += i
-		if part == 1:
-			print('total bitwise time', bitwiseTime)
-		print('total listwise time', listwiseTime)
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 1) == 7)
-#assert(go(data, 1) == 466)
-assert(go(testData, 2) >= 0)
+assert(go(testData, 1) == 7)
+assert(go(data, 1) == 466)
+#assert(go(testData, 2) >= 0)
