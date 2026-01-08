@@ -191,11 +191,11 @@ data = """\
 
 @dataclasses.dataclass
 class Machine:
-	goal: List[int]
-	goalBitwise: int
+	lightGoal: List[int]
+	lightGoalBitwise: int
 	wiring: List[List[int]]
 	wiringBitwise: List[int]
-	joltage: List[int]
+	joltageGoal: List[int]
 
 #-------------------------------------------------------------
 def solvePart1(m: Machine):
@@ -210,7 +210,7 @@ def solvePart1(m: Machine):
 			printInterval = 0
 			print('depth', presses, 'q size', len(q))
 
-		if current == m.goalBitwise:
+		if current == m.lightGoalBitwise:
 			return presses
 		
 		for w in m.wiringBitwise:
@@ -220,19 +220,22 @@ def solvePart1(m: Machine):
 	assert(False)
 
 #-------------------------------------------------------------
-def solvePart2(m: Machine):
+def _solvePart2(m: Machine):
 	printInterval = 0
 
 	#q = collections.deque()
 	#q.append(([0] * len(m.goal), 0))
 	q = []
 	priority = 0
-	current = [0] * len(m.goal)
+	current = [0] * len(m.lightGoal)
 	presses = 0
 	heapq.heappush(q, (priority, (current,presses)))
 
+	itemsExamined = 0
 	bestSolution = 1000000
 	while q:
+		itemsExamined += 1
+
 		#current,presses = q.pop()
 		priority,task = heapq.heappop(q)
 		current,presses = task
@@ -242,10 +245,11 @@ def solvePart2(m: Machine):
 			printInterval = 0
 			print('depth', presses, 'q size', len(q))
 
-		if current == m.goal:
+		if current == m.lightGoal:
 			if bestSolution > presses:
 				print('new best solution', presses)
 				bestSolution = presses
+			continue
 
 		if presses >= bestSolution - 1:
 			continue
@@ -253,7 +257,7 @@ def solvePart2(m: Machine):
 		possible = True
 		v = 0
 		for i in range(len(current)):
-			diff = m.goal[i] - current[i]
+			diff = m.lightGoal[i] - current[i]
 			if diff < 0:
 				possible = False
 				break
@@ -270,6 +274,54 @@ def solvePart2(m: Machine):
 			task = (newCurrent,presses + 1)
 			heapq.heappush(q, (priority, task))
 	
+	print('solution of', bestSolution, 'found by examining', itemsExamined)
+	return bestSolution
+
+#-------------------------------------------------------------
+def solvePart2(m: Machine):
+
+	bestSolution = 1000000
+
+	def calculateJoltage(presses):
+		nonlocal m
+		result = [0] * len(m.joltageGoal)
+		for press,wire in zip(presses, m.wiring):
+			for i in wire:
+				result[i] += press
+		return result
+	
+	def solutionStillPossible(joltage):
+		nonlocal m
+		return all(v <= goal for v,goal in zip(joltage, m.joltageGoal))
+		for i in range(len(joltage)):
+			if m.joltageGoal[i] < joltage[i]:
+				return False
+		return True
+
+	def searchForSolutions(presses, index):
+		nonlocal m, bestSolution
+#		print('--------', current, index)
+
+		newPresses = copy.copy(presses)
+		while True:
+			presses = sum(newPresses)
+			joltage = calculateJoltage(newPresses)
+
+			if bestSolution <= presses:
+				break
+			if joltage == m.joltageGoal:
+				print('new best solution', presses)
+				bestSolution = presses
+				break
+
+			newPresses[index] += 1
+			if solutionStillPossible(joltage) and index < len(newPresses) - 1:
+				searchForSolutions(newPresses, index + 1)
+			else:
+				break
+	
+	searchForSolutions([0] * len(m.wiring), 0)
+	print('solution of', bestSolution)
 	return bestSolution
 
 #-------------------------------------------------------------
@@ -339,5 +391,5 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-#assert(go(testData, 2) == 33)
-assert(go(data, 2) >= 0)
+assert(go(testData, 2) == 33)
+#assert(go(data, 2) >= 0)
