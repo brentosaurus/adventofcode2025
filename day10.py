@@ -406,39 +406,37 @@ def go(lines, part):
 # unbounded knapsack problem using memoization.
 
 calls = 0
-
-def knapSackRecur(i, capacity, val, wt, memo):
-	global calls
+memo = {}
+def knapSackRecur(i, capacity):
+	global calls, memo, weights, values
 	calls += 1
 
-	if i == len(val):
+	if i == len(values):
 		return 0
 
-	# If value is memoized.
-	if memo[i][capacity] != -1:
-		return memo[i][capacity]
+	# if this state is already memoized, return that value
+	memoKey = (i,capacity)
+	if memoKey in memo:
+		return memo[memoKey]
 
-	# Consider current item only if its weight is less than equal to maximum weight.
-	if wt[i] <= capacity:
-		take = val[i] + knapSackRecur(i, capacity - wt[i], val, wt, memo)
+	# if we can add one more of the current item, do so via recursion
+	if weights[i] <= capacity:
+		take = values[i] + knapSackRecur(i, capacity - weights[i])
 	else:
 		take = 0
 
-	# Skip the current item
-	noTake = knapSackRecur(i + 1, capacity, val, wt, memo)
+	# skip the current item
+	noTake = knapSackRecur(i + 1, capacity)
 
-	# store maximum of the two and return it.
-	memo[i][capacity] = max(take, noTake)
-	return memo[i][capacity]
+	# memoize the maximum of 'take' vs. 'skip', and return it
+	memo[memoKey] = max(take, noTake)
+	return memo[memoKey]
 
-def knapSack(capacity, val, wt):
-	
-	# 2D matrix for memoization.
-	memo = [[-1 for _ in range(capacity + 1)] for _ in range(len(val))]
-	return knapSackRecur(0, capacity, val, wt, memo)
+def knapSack(capacity, val):
+	return knapSackRecur(0, capacity)
 
-val = [1, 1, 1, 1]
-wt = [2, 1, 3, 4]
+values = [1, 1, 1, 1]
+weights = [2, 1, 3, 4]
 capacity = 100
-print(knapSack(capacity, val, wt))
+print(knapSack(capacity, values))
 print('calls:', calls)
