@@ -402,41 +402,50 @@ def go(lines, part):
 #assert(go(data, 2) >= 0)
 
 #-------------------------------------------------------------
-# Python program to implement
-# unbounded knapsack problem using memoization.
+# Python program to implement unbounded knapsack problem using memoization
 
-calls = 0
-memo = {}
-def knapSackRecur(i, capacity):
-	global calls, memo, weights, values
+def knapSackRecur(i, counts):
+	global calls, memoed, memo, weights
 	calls += 1
 
-	if i == len(values):
+	if calls % 10000 == 0:
+		print(i, counts)
+
+	def valueFunction(counts):
+		global weights
+		return sum(count * value for count,value in zip(counts, weights))
+
+	if i == len(counts):
 		return 0
 
 	# if this state is already memoized, return that value
-	memoKey = (i,capacity)
+	memoKey = (i,tuple(counts))
 	if memoKey in memo:
+		memoed += 1
 		return memo[memoKey]
 
 	# if we can add one more of the current item, do so via recursion
-	if weights[i] <= capacity:
-		take = values[i] + knapSackRecur(i, capacity - weights[i])
+	newCounts = copy.copy(counts)
+	newCounts[i] += 1
+	curValue = valueFunction(counts)
+	newValue = valueFunction(newCounts)
+
+	if newValue <= capacity:
+		take = knapSackRecur(i, newCounts)
 	else:
-		take = 0
+		take = curValue
 
 	# skip the current item
-	noTake = knapSackRecur(i + 1, capacity)
+	noTake = knapSackRecur(i + 1, counts)
 
 	# memoize the maximum of 'take' vs. 'skip', and return it
 	memo[memoKey] = max(take, noTake)
 	return memo[memoKey]
 
-def knapSack(capacity, val):
-	return knapSackRecur(0, capacity)
-
-values = [1, 1, 1, 1]
+calls = 0
+memoed = 0
+memo = {}
 weights = [2, 1, 3, 4]
 capacity = 100
-print(knapSack(capacity, values))
-print('calls:', calls)
+print(knapSackRecur(0, [0] * len(weights)))
+print('calls:', calls, 'memoed', memoed)
