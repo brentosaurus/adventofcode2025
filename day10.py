@@ -293,32 +293,39 @@ def solvePart2(m: Machine):
 	def solutionStillPossible(joltage):
 		nonlocal m
 		return all(v <= goal for v,goal in zip(joltage, m.joltageGoal))
-		for i in range(len(joltage)):
-			if m.joltageGoal[i] < joltage[i]:
-				return False
-		return True
+
+	printInterval = 0
 
 	def searchForSolutions(presses, index):
-		nonlocal m, bestSolution
-#		print('--------', current, index)
+		nonlocal m, bestSolution, printInterval
 
 		newPresses = copy.copy(presses)
 		while True:
-			presses = sum(newPresses)
+			totalPresses = sum(newPresses)
 			joltage = calculateJoltage(newPresses)
+			
+			printInterval += 1
+			if printInterval >= 10000:
+				printInterval = 0
+				print('--------', newPresses, index)
 
-			if bestSolution <= presses:
+			if totalPresses >= bestSolution:
 				break
+
 			if joltage == m.joltageGoal:
-				print('new best solution', presses)
-				bestSolution = presses
+				assert(totalPresses < bestSolution)
+				print('    **** new best solution', newPresses)
+				bestSolution = totalPresses
 				break
+
+			if not solutionStillPossible(joltage):
+				#print('    solution not possible')
+				break
+			
+			if index < len(newPresses) - 1:
+				searchForSolutions(newPresses, index + 1)
 
 			newPresses[index] += 1
-			if solutionStillPossible(joltage) and index < len(newPresses) - 1:
-				searchForSolutions(newPresses, index + 1)
-			else:
-				break
 	
 	searchForSolutions([0] * len(m.wiring), 0)
 	print('solution of', bestSolution)
@@ -391,5 +398,47 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-assert(go(testData, 2) == 33)
+#assert(go(testData, 2) == 33)
 #assert(go(data, 2) >= 0)
+
+#-------------------------------------------------------------
+# Python program to implement
+# unbounded knapsack problem using memoization.
+
+calls = 0
+
+def knapSackRecur(i, capacity, val, wt, memo):
+	global calls
+	calls += 1
+
+	if i == len(val):
+		return 0
+
+	# If value is memoized.
+	if memo[i][capacity] != -1:
+		return memo[i][capacity]
+
+	# Consider current item only if its weight is less than equal to maximum weight.
+	if wt[i] <= capacity:
+		take = val[i] + knapSackRecur(i, capacity - wt[i], val, wt, memo)
+	else:
+		take = 0
+
+	# Skip the current item
+	noTake = knapSackRecur(i + 1, capacity, val, wt, memo)
+
+	# store maximum of the two and return it.
+	memo[i][capacity] = max(take, noTake)
+	return memo[i][capacity]
+
+def knapSack(capacity, val, wt):
+	
+	# 2D matrix for memoization.
+	memo = [[-1 for _ in range(capacity + 1)] for _ in range(len(val))]
+	return knapSackRecur(0, capacity, val, wt, memo)
+
+val = [1, 1, 1, 1]
+wt = [2, 1, 3, 4]
+capacity = 100
+print(knapSack(capacity, val, wt))
+print('calls:', calls)
