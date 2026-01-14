@@ -295,10 +295,30 @@ def solvePart2(m: Machine):
 		return all(v <= goal for v,goal in zip(joltage, m.joltageGoal))
 
 	#--- determine which buttons affect each joltage counter
+	joltageCalculations = ['' for _ in range(len(m.joltageGoal))]
 	dependencies = [[] for _ in range(len(m.joltageGoal))]
 	for wiringIndex,w in enumerate(m.wiring):
 		for i in w:
 			dependencies[i].append(wiringIndex)
+			joltageCalculations[i] += f'presses[{wiringIndex}]+'
+	for i in range(len(joltageCalculations)):
+		if joltageCalculations[i][-1:] == '+':
+			joltageCalculations[i] = joltageCalculations[i][:-1]
+	for s in joltageCalculations:
+		print(s)
+
+	stillPossible = ''
+	for i,s in enumerate(joltageCalculations):
+		stillPossible += f'{s} < {m.joltageGoal[i]}'
+		if i < len(joltageCalculations) - 1:
+			stillPossible += ' and '
+	print(stillPossible)
+	
+	for dependencyIndex,dependency in enumerate(dependencies):
+		print('joltage', dependencyIndex, '=', end=None)
+		for j in dependency:
+			print(j, ' ', end=None)
+		print()
 
 	if True:
 		print(dependencies)
@@ -313,8 +333,12 @@ def solvePart2(m: Machine):
 	def searchForSolutions(presses, index):
 		nonlocal m, bestSolution, iterations
 
+		maxPressForThisButton = 100
+
 		newPresses = copy.copy(presses)
-		while True:
+		for i in range(maxPressForThisButton):
+			newPresses[index] = i
+
 			totalPresses = sum(newPresses)
 			joltage = calculateJoltage(newPresses)
 			
@@ -327,19 +351,17 @@ def solvePart2(m: Machine):
 				break
 
 			if joltage == m.joltageGoal:
-				assert(totalPresses < bestSolution)
+				#assert(totalPresses < bestSolution)
 				print('    **** new best solution', newPresses)
 				bestSolution = totalPresses
 				break
 
 			if not solutionStillPossible(joltage):
-				#print('    solution not possible')
+			#	#print('    solution not possible')
 				break
 			
 			if index < len(newPresses) - 1:
 				searchForSolutions(newPresses, index + 1)
-
-			newPresses[index] += 1
 	
 	searchForSolutions([0] * len(m.wiring), 0)
 	print('solution of', bestSolution, 'via', iterations, 'iterations')
@@ -412,5 +434,44 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-assert(go(testData, 2) == 33)
+#assert(go(testData, 2) == 33)
 #assert(go(data, 2) >= 0)
+
+#-------------------------------------------------------------
+import pulp
+
+# 1. Create the problem instance
+model = pulp.LpProblem("Production_Mix_example", pulp.LpMinimize) #
+
+# 2. Create the decision variables
+# lowBound=0 sets the non-negativity constraint (x, y >= 0)
+a = pulp.LpVariable('a', lowBound=0, cat='LpInteger') #
+b = pulp.LpVariable('b', lowBound=0, cat='LpInteger') #
+c = pulp.LpVariable('c', lowBound=0, cat='LpInteger') #
+d = pulp.LpVariable('d', lowBound=0, cat='LpInteger') #
+e = pulp.LpVariable('e', lowBound=0, cat='LpInteger') #
+f = pulp.LpVariable('f', lowBound=0, cat='LpInteger') #
+
+# 3. Add the objective function to the model
+model += a + b + c + d + e + f, "Objective" #
+
+# 4. Add the constraints to the model
+model += pulp.lpSum([e,f]) == 3, "Constraint1" #
+#model += e + f == 3, "Constraint1" #
+model += b + f == 5, "Constraint2" #
+model += c + d + e == 4, "Constraint3" #
+model += a + b + d == 7, "Constraint4" #
+
+# 5. Solve the problem
+model.solve() #
+
+# 6. Print the solution status and results
+print(f"Status: {pulp.LpStatus[model.status]}") #
+
+if pulp.LpStatus[model.status] == 'Optimal':
+    print("\nSolution:")
+    for v in model.variables():
+        print(f"{v.name} = {v.varValue}") #
+    print(f"\nOptimal Objective Value = {pulp.value(model.objective)}") #
+else:
+    print("No optimal solution found.")
