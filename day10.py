@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy, time, collections, heapq
+import parse, dataclasses, copy, time, collections, heapq, constraint
 from typing import List
 
 testData = """\
@@ -294,19 +294,33 @@ def solvePart2(m: Machine):
 		nonlocal m
 		return all(v <= goal for v,goal in zip(joltage, m.joltageGoal))
 
-	printInterval = 0
+	#--- determine which buttons affect each joltage counter
+	dependencies = [[] for _ in range(len(m.joltageGoal))]
+	for wiringIndex,w in enumerate(m.wiring):
+		for i in w:
+			dependencies[i].append(wiringIndex)
+
+	if True:
+		print(dependencies)
+		for wiringIndex,w in enumerate(m.wiring):
+			print('-------- wiringIndex', wiringIndex)
+			for dependencyIndex,d in enumerate(dependencies):
+				if len(d) >= 2 and d[-1] == wiringIndex:
+					print('button', wiringIndex, 'is the last button dependency for', dependencyIndex)
+
+	iterations = 0
 
 	def searchForSolutions(presses, index):
-		nonlocal m, bestSolution, printInterval
+		nonlocal m, bestSolution, iterations
 
 		newPresses = copy.copy(presses)
 		while True:
 			totalPresses = sum(newPresses)
 			joltage = calculateJoltage(newPresses)
 			
-			printInterval += 1
-			if printInterval >= 10000:
-				printInterval = 0
+			iterations += 1
+			if iterations >= 10000:
+				iterations = 0
 				print('--------', newPresses, index)
 
 			if totalPresses >= bestSolution:
@@ -328,7 +342,7 @@ def solvePart2(m: Machine):
 			newPresses[index] += 1
 	
 	searchForSolutions([0] * len(m.wiring), 0)
-	print('solution of', bestSolution)
+	print('solution of', bestSolution, 'via', iterations, 'iterations')
 	return bestSolution
 
 #-------------------------------------------------------------
@@ -398,5 +412,5 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-#assert(go(testData, 2) == 33)
+assert(go(testData, 2) == 33)
 #assert(go(data, 2) >= 0)
