@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy, time, collections, heapq, constraint
+import parse, dataclasses, copy, time, collections, heapq, constraint, pulp
 from typing import List
 
 testData = """\
@@ -220,7 +220,7 @@ def solvePart1(m: Machine):
 	assert(False)
 
 #-------------------------------------------------------------
-def _solvePart2(m: Machine):
+def solvePart2_firstTry(m: Machine):
 	printInterval = 0
 
 	#q = collections.deque()
@@ -278,7 +278,7 @@ def _solvePart2(m: Machine):
 	return bestSolution
 
 #-------------------------------------------------------------
-def solvePart2(m: Machine):
+def solvePart2_secondTry(m: Machine):
 
 	bestSolution = 1000000
 
@@ -368,6 +368,47 @@ def solvePart2(m: Machine):
 	return bestSolution
 
 #-------------------------------------------------------------
+def solvePart2(m: Machine):
+
+	# 1. Create the problem instance
+	model = pulp.LpProblem("Day 10 Part 2", pulp.LpMinimize) #
+
+	# 2. Create the decision variables
+	# lowBound=0 sets the non-negativity constraint (x, y >= 0)
+	# TODO: set array size to the actual number of buttons
+	buttons = [pulp.LpVariable(f'button{i}', lowBound=0, cat='Integer') for i in range(10)]
+
+	# 3. Add the objective function to the model
+	model += pulp.lpSum(buttons), "Objective" #
+
+	# 4. Add the constraints to the model
+	for joltageIndex,joltageValue in enumerate(m.joltageGoal):
+		print('--- joltageIndex', joltageIndex, 'joltageValue', joltageValue)
+		buttonList = []
+		for wiringIndex,wiringValue in enumerate(m.wiring):
+			if joltageIndex in wiringValue:
+				buttonList.append(buttons[wiringIndex])
+				print('    button', wiringIndex)
+		model += pulp.lpSum(buttonList) == joltageValue, f"Constraint{joltageIndex}" #
+
+	# 5. Solve the problem
+	model.solve() #
+
+	# 6. Print the solution status and results
+	print(f"Status: {pulp.LpStatus[model.status]}") #
+
+	if pulp.LpStatus[model.status] == 'Optimal':
+		print("\nSolution:")
+		for v in model.variables():
+			print(f"{v.name} = {v.varValue}") #
+		print(f"\nOptimal Objective Value = {pulp.value(model.objective)}") #
+	else:
+		print("No optimal solution found.")
+		assert(False)
+
+	return pulp.lpSum(buttons).value()
+
+#-------------------------------------------------------------
 def go(lines, part):
 
 	def bitwise(myList):
@@ -434,7 +475,7 @@ def go(lines, part):
 #-------------------------------------------------------------
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
-#assert(go(testData, 2) == 33)
+assert(go(testData, 2) == 33)
 #assert(go(data, 2) >= 0)
 
 #-------------------------------------------------------------
