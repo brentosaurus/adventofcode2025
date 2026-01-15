@@ -375,36 +375,37 @@ def solvePart2(m: Machine):
 
 	# 2. Create the decision variables
 	# lowBound=0 sets the non-negativity constraint (x, y >= 0)
-	# TODO: set array size to the actual number of buttons
-	buttons = [pulp.LpVariable(f'button{i}', lowBound=0, cat='Integer') for i in range(10)]
+	buttons = [pulp.LpVariable(f'button{i}', lowBound=0, cat='Integer') for i in range(len(m.wiring))]
 
 	# 3. Add the objective function to the model
 	model += pulp.lpSum(buttons), "Objective" #
 
 	# 4. Add the constraints to the model
 	for joltageIndex,joltageValue in enumerate(m.joltageGoal):
-		print('--- joltageIndex', joltageIndex, 'joltageValue', joltageValue)
+		#print('--- joltageIndex', joltageIndex, 'joltageValue', joltageValue)
 		buttonList = []
 		for wiringIndex,wiringValue in enumerate(m.wiring):
 			if joltageIndex in wiringValue:
 				buttonList.append(buttons[wiringIndex])
-				print('    button', wiringIndex)
+				#print('    button', wiringIndex)
 		model += pulp.lpSum(buttonList) == joltageValue, f"Constraint{joltageIndex}" #
 
 	# 5. Solve the problem
 	model.solve() #
 
 	# 6. Print the solution status and results
-	print(f"Status: {pulp.LpStatus[model.status]}") #
-
-	if pulp.LpStatus[model.status] == 'Optimal':
-		print("\nSolution:")
-		for v in model.variables():
-			print(f"{v.name} = {v.varValue}") #
-		print(f"\nOptimal Objective Value = {pulp.value(model.objective)}") #
+	if True:
+		assert(pulp.LpStatus[model.status] == 'Optimal')
 	else:
-		print("No optimal solution found.")
-		assert(False)
+		print(f"Status: {pulp.LpStatus[model.status]}") #
+		if pulp.LpStatus[model.status] == 'Optimal':
+			print("\nSolution:")
+			for v in model.variables():
+				print(f"{v.name} = {v.varValue}") #
+			print(f"\nOptimal Objective Value = {pulp.value(model.objective)}") #
+		else:
+			print("No optimal solution found.")
+			assert(False)
 
 	return pulp.lpSum(buttons).value()
 
@@ -476,43 +477,4 @@ def go(lines, part):
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
 assert(go(testData, 2) == 33)
-#assert(go(data, 2) >= 0)
-
-#-------------------------------------------------------------
-import pulp
-
-# 1. Create the problem instance
-model = pulp.LpProblem("Production_Mix_example", pulp.LpMinimize) #
-
-# 2. Create the decision variables
-# lowBound=0 sets the non-negativity constraint (x, y >= 0)
-a = pulp.LpVariable('a', lowBound=0, cat='LpInteger') #
-b = pulp.LpVariable('b', lowBound=0, cat='LpInteger') #
-c = pulp.LpVariable('c', lowBound=0, cat='LpInteger') #
-d = pulp.LpVariable('d', lowBound=0, cat='LpInteger') #
-e = pulp.LpVariable('e', lowBound=0, cat='LpInteger') #
-f = pulp.LpVariable('f', lowBound=0, cat='LpInteger') #
-
-# 3. Add the objective function to the model
-model += a + b + c + d + e + f, "Objective" #
-
-# 4. Add the constraints to the model
-model += pulp.lpSum([e,f]) == 3, "Constraint1" #
-#model += e + f == 3, "Constraint1" #
-model += b + f == 5, "Constraint2" #
-model += c + d + e == 4, "Constraint3" #
-model += a + b + d == 7, "Constraint4" #
-
-# 5. Solve the problem
-model.solve() #
-
-# 6. Print the solution status and results
-print(f"Status: {pulp.LpStatus[model.status]}") #
-
-if pulp.LpStatus[model.status] == 'Optimal':
-    print("\nSolution:")
-    for v in model.variables():
-        print(f"{v.name} = {v.varValue}") #
-    print(f"\nOptimal Objective Value = {pulp.value(model.objective)}") #
-else:
-    print("No optimal solution found.")
+assert(go(data, 2) >= 0)
