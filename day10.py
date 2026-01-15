@@ -220,154 +220,6 @@ def solvePart1(m: Machine):
 	assert(False)
 
 #-------------------------------------------------------------
-def solvePart2_firstTry(m: Machine):
-	printInterval = 0
-
-	#q = collections.deque()
-	#q.append(([0] * len(m.goal), 0))
-	q = []
-	priority = 0
-	current = [0] * len(m.lightGoal)
-	presses = 0
-	heapq.heappush(q, (priority, (current,presses)))
-
-	itemsExamined = 0
-	bestSolution = 1000000
-	while q:
-		itemsExamined += 1
-
-		#current,presses = q.pop()
-		priority,task = heapq.heappop(q)
-		current,presses = task
-
-		printInterval += 1
-		if printInterval > 100000:
-			printInterval = 0
-			print('depth', presses, 'q size', len(q))
-
-		if current == m.lightGoal:
-			if bestSolution > presses:
-				print('new best solution', presses)
-				bestSolution = presses
-			continue
-
-		if presses >= bestSolution - 1:
-			continue
-
-		possible = True
-		v = 0
-		for i in range(len(current)):
-			diff = m.lightGoal[i] - current[i]
-			if diff < 0:
-				possible = False
-				break
-			v += diff
-		if not possible:
-			continue
-		
-		for w in m.wiring:
-			newCurrent = copy.copy(current)
-			for i in w:
-				newCurrent[i] += 1
-			#q.append((newCurrent, presses + 1))
-			priority = v
-			task = (newCurrent,presses + 1)
-			heapq.heappush(q, (priority, task))
-	
-	print('solution of', bestSolution, 'found by examining', itemsExamined)
-	return bestSolution
-
-#-------------------------------------------------------------
-def solvePart2_secondTry(m: Machine):
-
-	bestSolution = 1000000
-
-	def calculateJoltage(presses):
-		nonlocal m
-		result = [0] * len(m.joltageGoal)
-		for press,wire in zip(presses, m.wiring):
-			for i in wire:
-				result[i] += press
-		return result
-	
-	def solutionStillPossible(joltage):
-		nonlocal m
-		return all(v <= goal for v,goal in zip(joltage, m.joltageGoal))
-
-	#--- determine which buttons affect each joltage counter
-	joltageCalculations = ['' for _ in range(len(m.joltageGoal))]
-	dependencies = [[] for _ in range(len(m.joltageGoal))]
-	for wiringIndex,w in enumerate(m.wiring):
-		for i in w:
-			dependencies[i].append(wiringIndex)
-			joltageCalculations[i] += f'presses[{wiringIndex}]+'
-	for i in range(len(joltageCalculations)):
-		if joltageCalculations[i][-1:] == '+':
-			joltageCalculations[i] = joltageCalculations[i][:-1]
-	for s in joltageCalculations:
-		print(s)
-
-	stillPossible = ''
-	for i,s in enumerate(joltageCalculations):
-		stillPossible += f'{s} < {m.joltageGoal[i]}'
-		if i < len(joltageCalculations) - 1:
-			stillPossible += ' and '
-	print(stillPossible)
-	
-	for dependencyIndex,dependency in enumerate(dependencies):
-		print('joltage', dependencyIndex, '=', end=None)
-		for j in dependency:
-			print(j, ' ', end=None)
-		print()
-
-	if True:
-		print(dependencies)
-		for wiringIndex,w in enumerate(m.wiring):
-			print('-------- wiringIndex', wiringIndex)
-			for dependencyIndex,d in enumerate(dependencies):
-				if len(d) >= 2 and d[-1] == wiringIndex:
-					print('button', wiringIndex, 'is the last button dependency for', dependencyIndex)
-
-	iterations = 0
-
-	def searchForSolutions(presses, index):
-		nonlocal m, bestSolution, iterations
-
-		maxPressForThisButton = 100
-
-		newPresses = copy.copy(presses)
-		for i in range(maxPressForThisButton):
-			newPresses[index] = i
-
-			totalPresses = sum(newPresses)
-			joltage = calculateJoltage(newPresses)
-			
-			iterations += 1
-			if iterations >= 10000:
-				iterations = 0
-				print('--------', newPresses, index)
-
-			if totalPresses >= bestSolution:
-				break
-
-			if joltage == m.joltageGoal:
-				#assert(totalPresses < bestSolution)
-				print('    **** new best solution', newPresses)
-				bestSolution = totalPresses
-				break
-
-			if not solutionStillPossible(joltage):
-			#	#print('    solution not possible')
-				break
-			
-			if index < len(newPresses) - 1:
-				searchForSolutions(newPresses, index + 1)
-	
-	searchForSolutions([0] * len(m.wiring), 0)
-	print('solution of', bestSolution, 'via', iterations, 'iterations')
-	return bestSolution
-
-#-------------------------------------------------------------
 def solvePart2(m: Machine):
 
 	# 1. Create the problem instance
@@ -382,12 +234,13 @@ def solvePart2(m: Machine):
 
 	# 4. Add the constraints to the model
 	for joltageIndex,joltageValue in enumerate(m.joltageGoal):
+		buttonList = [buttons[wiringIndex] for wiringIndex,wiringValue in enumerate(m.wiring) if joltageIndex in wiringValue]
 		#print('--- joltageIndex', joltageIndex, 'joltageValue', joltageValue)
-		buttonList = []
-		for wiringIndex,wiringValue in enumerate(m.wiring):
-			if joltageIndex in wiringValue:
-				buttonList.append(buttons[wiringIndex])
-				#print('    button', wiringIndex)
+		#buttonList = []
+		#for wiringIndex,wiringValue in enumerate(m.wiring):
+		#	if joltageIndex in wiringValue:
+		#		buttonList.append(buttons[wiringIndex])
+		#		#print('    button', wiringIndex)
 		model += pulp.lpSum(buttonList) == joltageValue, f"Constraint{joltageIndex}" #
 
 	# 5. Solve the problem
@@ -477,4 +330,4 @@ def go(lines, part):
 #assert(go(testData, 1) == 7)
 #assert(go(data, 1) == 466)
 assert(go(testData, 2) == 33)
-assert(go(data, 2) >= 0)
+assert(go(data, 2) == 17214)
