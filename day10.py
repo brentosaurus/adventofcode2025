@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses, copy, time, collections, heapq, constraint, pulp
+import parse, dataclasses, collections, pulp
 from typing import List
 
 testData = """\
@@ -189,12 +189,13 @@ data = """\
 [.#....#.] (0,1,2,4,5,6,7) (0,1,2,4,6,7) (2,5) (0,3,4,6) (0,4) (1,3,5) (0,2,4,5,6) (0,5,7) (0,1,2,3,4,5) {103,58,74,49,98,80,62,32}\
 """.split('\n')
 
+#-------------------------------------------------------------
 @dataclasses.dataclass
 class Machine:
-	lightGoal: List[int]
-	lightGoalBitwise: int
 	wiring: List[List[int]]
 	wiringBitwise: List[int]
+	lightGoal: List[int]
+	lightGoalBitwise: int
 	joltageGoal: List[int]
 
 #-------------------------------------------------------------
@@ -208,7 +209,8 @@ def solvePart1(m: Machine):
 		printInterval += 1
 		if printInterval > 100000:
 			printInterval = 0
-			print('depth', presses, 'q size', len(q))
+			#print('depth', presses, 'q size', len(q))
+			print('*', end='')
 
 		if current == m.lightGoalBitwise:
 			return presses
@@ -223,7 +225,7 @@ def solvePart1(m: Machine):
 def solvePart2(m: Machine):
 
 	# 1. Create the problem instance
-	model = pulp.LpProblem("Day 10 Part 2", pulp.LpMinimize) #
+	model = pulp.LpProblem("Day-10-Part-2", pulp.LpMinimize) #
 
 	# 2. Create the decision variables
 	# lowBound=0 sets the non-negativity constraint (x, y >= 0)
@@ -235,16 +237,10 @@ def solvePart2(m: Machine):
 	# 4. Add the constraints to the model
 	for joltageIndex,joltageValue in enumerate(m.joltageGoal):
 		buttonList = [buttons[wiringIndex] for wiringIndex,wiringValue in enumerate(m.wiring) if joltageIndex in wiringValue]
-		#print('--- joltageIndex', joltageIndex, 'joltageValue', joltageValue)
-		#buttonList = []
-		#for wiringIndex,wiringValue in enumerate(m.wiring):
-		#	if joltageIndex in wiringValue:
-		#		buttonList.append(buttons[wiringIndex])
-		#		#print('    button', wiringIndex)
 		model += pulp.lpSum(buttonList) == joltageValue, f"Constraint{joltageIndex}" #
 
 	# 5. Solve the problem
-	model.solve() #
+	model.solve(pulp.PULP_CBC_CMD(msg=False)) # suppresses solver's output
 
 	# 6. Print the solution status and results
 	if True:
@@ -260,7 +256,9 @@ def solvePart2(m: Machine):
 			print("No optimal solution found.")
 			assert(False)
 
-	return pulp.lpSum(buttons).value()
+	result = pulp.lpSum(buttons).value()
+	assert(result.is_integer()) # should be a whole number
+	return int(result)
 
 #-------------------------------------------------------------
 def go(lines, part):
@@ -301,33 +299,31 @@ def go(lines, part):
 			wiringBitwise.append(valuesBitwise)
 
 		# 3) Parse the curly-brace section into a list of ints
-		curly_values = [int(v) for v in curly_str.split(",")]
+		joltageGoalList = [int(v) for v in curly_str.split(",")]
 
-		goalList = [c == '#' for c in square_str]
-		if part == 2:
-			goalList = curly_values
-		goalBitwise = bitwise([i for i,c in enumerate(square_str) if c == '#'])
-		#print('goalList', goalList, 'goalBitwise', goalBitwise)
-		m = Machine(goalList, goalBitwise, wiringList, wiringBitwise, curly_values)
+		lightGoalList = [c == '#' for c in square_str]
+		lightGoalBitwise = bitwise([i for i,c in enumerate(square_str) if c == '#'])
+		m = Machine(wiringList, wiringBitwise, lightGoalList, lightGoalBitwise, joltageGoalList)
 		machines.append(m)
 
 	result = 0
-	for mIndex,m in enumerate(machines):
-		print(mIndex, '------------', m)
+	for m in machines:
+		#print(mIndex, '------------', m)
+		print('.', end='')
 
 		if part == 1:
 			i = solvePart1(m)
 		else:
 			i = solvePart2(m)
 
-		print(i)
+		#print(i)
 		result += i
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-#assert(go(testData, 1) == 7)
-#assert(go(data, 1) == 466)
+assert(go(testData, 1) == 7)
+assert(go(data, 1) == 466)
 assert(go(testData, 2) == 33)
 assert(go(data, 2) == 17214)
