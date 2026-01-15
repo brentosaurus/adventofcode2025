@@ -1,5 +1,12 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
+#
+# Part 1 is a brute-force search. Apparently there's no point in
+# searching deeper than *one* since any odd number of presses has the
+# same effect, and any even number of presses by definition has no effect!
+#
+# Part 2 creates a list of the required goal conditions and uses the Pulp
+# solver library to return the best (lowest total button presses) solution.
 #-------------------------------------------------------------
 import parse, dataclasses, collections, pulp
 from typing import List
@@ -192,11 +199,11 @@ data = """\
 #-------------------------------------------------------------
 @dataclasses.dataclass
 class Machine:
-	wiring: List[List[int]]
-	wiringBitwise: List[int]
-	lightGoal: List[int]
-	lightGoalBitwise: int
-	joltageGoal: List[int]
+	wiring: List[List[int]]		# each button's wiring expressed as a list of which light #s it's connected to
+	wiringBitwise: List[int]	# the same info, but expressed as single numbers with a bit on if it's connected to that light
+	lightGoal: List[int]		# the on/off goal for each light
+	lightGoalBitwise: int		# the same info, but expressed as a single number with a bit on if that light should be on
+	joltageGoal: List[int]		# the specific 'joltage' goal for each light
 
 #-------------------------------------------------------------
 def solvePart1(m: Machine):
