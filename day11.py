@@ -2,7 +2,7 @@
 # Advent of Code 2025
 #-------------------------------------------------------------
 import parse, dataclasses, functools
-from typing import List
+from typing import List, NamedTuple
 
 testData = """\
 aaa: you hhh
@@ -612,15 +612,9 @@ jup: igc jnm vdp\
 """.split('\n')
 	
 #-------------------------------------------------------------
-
-# 'frozen' so it's hashable and so usable by functools.cache
-@dataclasses.dataclass(frozen=True)
-class Node:
+class Node(NamedTuple):
 	name: str
 	outputs: List['Node'] = dataclasses.field(default_factory=list)
-
-DAC=1
-FFT=2
 
 #-------------------------------------------------------------
 def go(lines, part):
@@ -636,6 +630,9 @@ def go(lines, part):
 	
 	#--- for part 2, we start from a different node ('svr' vs. 'you') and only
 	# count a path if it goes through both a 'dac' and 'fft' node (in any order).
+	DAC=1
+	FFT=2
+
 	@functools.cache # (the cache is CRUCIAL for part 2!)
 	def countPaths(name, status):
 		if name == 'out':
