@@ -1,7 +1,8 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse
+import parse, dataclasses
+from typing import List
 
 testData = """\
 aaa: you hhh
@@ -595,10 +596,37 @@ jup: igc jnm vdp\
 """.split('\n')
 	
 #-------------------------------------------------------------
+
+@dataclasses.dataclass
+class Node:
+	name: str
+	outputs: List['Node'] = dataclasses.field(default_factory=list)
+
+#-------------------------------------------------------------
 def go(lines, part):
-	result = 0
+
+	nodes = {}
+	for line in lines:
+		name,outputs = line.split(":", 1)
+		node = Node(name.strip(), outputs.strip().split())
+		nodes[node.name] = node
+	#--- create the 'sink' output, named 'out'
+	nodes['out'] = Node('out', [])
+	
+	#--- convert all 'output' references from strings to the actual nodes
+	for node in nodes.values():
+		node.outputs = [nodes[s] for s in node.outputs]
+	
+	def countPaths(node):
+		if node.name == 'out':
+			return 1
+		else:
+			return sum(countPaths(output) for output in node.outputs)
+	
+	result = countPaths(nodes['you'])
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-assert(go(testData, 1) >= 0)
+assert(go(testData, 1) == 5)
+assert(go(data, 1) >= 0)
