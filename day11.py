@@ -614,7 +614,7 @@ jup: igc jnm vdp\
 #-------------------------------------------------------------
 class Node(NamedTuple):
 	name: str
-	outputs: List['Node'] = dataclasses.field(default_factory=list)
+	outputs: List[str]
 
 #-------------------------------------------------------------
 def go(lines, part):
