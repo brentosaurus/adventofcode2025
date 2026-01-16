@@ -17,6 +17,22 @@ hhh: ccc fff iii
 iii: out\
 """.split('\n')
 
+testData2 = """\
+svr: aaa bbb
+aaa: fft
+fft: ccc
+bbb: tty
+tty: ccc
+ccc: ddd eee
+ddd: hub
+hub: fff
+eee: dac
+dac: fff
+fff: ggg hhh
+ggg: out
+hhh: out\
+""".split('\n')
+
 data = """\
 xvy: tps
 vjj: tsf
@@ -597,37 +613,47 @@ jup: igc jnm vdp\
 	
 #-------------------------------------------------------------
 
+# 'frozen' so it's hashable and so usable by functools.cache
 @dataclasses.dataclass(frozen=True)
 class Node:
 	name: str
 	outputs: List['Node'] = dataclasses.field(default_factory=list)
 
+DAC=1
+FFT=2
+
 #-------------------------------------------------------------
 def go(lines, part):
 
+	#--- create the nodes
 	nodes = {}
 	for line in lines:
 		name,outputs = line.split(":", 1)
 		node = Node(name.strip(), outputs.strip().split())
 		nodes[node.name] = node
-	#--- create the 'sink' output, named 'out'
+	#--- create the 'sink' output node, named 'out'
 	nodes['out'] = Node('out', [])
 	
-	@functools.cache
-	def countPaths(name):
-		global calls
-		calls += 1
+	#--- for part 2, we start from a different node ('svr' vs. 'you') and only
+	# count a path if it goes through both a 'dac' and 'fft' node (in any order).
+	@functools.cache # (the cache is CRUCIAL for part 2!)
+	def countPaths(name, status):
 		if name == 'out':
-			return 1
+			return part == 1 or status == DAC | FFT
 		else:
-			return sum(countPaths(output) for output in nodes[name].outputs)
+			if name == 'dac':
+				status |= DAC
+			elif name == 'fft':
+				status |= FFT
+
+			return sum(countPaths(output, status) for output in nodes[name].outputs)
 	
-	result = countPaths('you')
+	result = countPaths('you' if part == 1 else 'svr', 0)
 	print(result)
 	return result
 
 #-------------------------------------------------------------
-calls = 0
 assert(go(testData, 1) == 5)
 assert(go(data, 1) == 791)
-print('calls', calls)
+assert(go(testData2, 2) == 2)
+assert(go(data, 2) == 520476725037672)
