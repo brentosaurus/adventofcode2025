@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses
+import parse, dataclasses, functools
 from typing import List
 
 testData = """\
@@ -597,7 +597,7 @@ jup: igc jnm vdp\
 	
 #-------------------------------------------------------------
 
-@dataclasses.dataclass
+@dataclasses.dataclass(frozen=True)
 class Node:
 	name: str
 	outputs: List['Node'] = dataclasses.field(default_factory=list)
@@ -613,20 +613,21 @@ def go(lines, part):
 	#--- create the 'sink' output, named 'out'
 	nodes['out'] = Node('out', [])
 	
-	#--- convert all 'output' references from strings to the actual nodes
-	for node in nodes.values():
-		node.outputs = [nodes[s] for s in node.outputs]
-	
-	def countPaths(node):
-		if node.name == 'out':
+	@functools.cache
+	def countPaths(name):
+		global calls
+		calls += 1
+		if name == 'out':
 			return 1
 		else:
-			return sum(countPaths(output) for output in node.outputs)
+			return sum(countPaths(output) for output in nodes[name].outputs)
 	
-	result = countPaths(nodes['you'])
+	result = countPaths('you')
 	print(result)
 	return result
 
 #-------------------------------------------------------------
+calls = 0
 assert(go(testData, 1) == 5)
-assert(go(data, 1) >= 0)
+assert(go(data, 1) == 791)
+print('calls', calls)
