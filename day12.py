@@ -1,7 +1,7 @@
 #-------------------------------------------------------------
 # Advent of Code 2025
 #-------------------------------------------------------------
-import parse, dataclasses
+import parse, dataclasses, copy
 from typing import List, Tuple
 import numpy as np
 
@@ -1082,6 +1082,107 @@ class Setup:
 	quantities: List[int]
 
 #-------------------------------------------------------------
+def has_overlap(a1: np.ndarray, a2: np.ndarray, x: int, y: int, rotate: int, flip_h: bool, flip_v: bool) -> bool:
+
+    # Copy a2 so we don’t modify the original
+    arr = a2.copy()
+
+    # ---- Apply rotation ----
+    if rotate not in (0, 90, 180, 270):
+        raise ValueError("rotate must be 0, 90, 180, or 270")
+    k = rotate // 90
+    if k:
+        arr = np.rot90(arr, k=k)  # rotates counter-clockwise
+
+    # ---- Apply flips ----
+    if flip_h:
+        arr = np.fliplr(arr)
+    if flip_v:
+        arr = np.flipud(arr)
+
+    # Extract region from a1 where a2 would be placed
+    region = a1[y:y + arr.shape[0], x:x + arr.shape[1]]
+
+    # Check if any position has nonzero in both
+    return np.any((region != 0) & (arr != 0))
+
+#-------------------------------------------------------------
+# Copy a2 into a1 at position (x, y), optionally rotating and/or flipping a2.
+# Parameters:
+#     a1 (np.ndarray): Large array to copy into
+#     a2 (np.ndarray): Smaller array to copy
+#     x (int): Column index in a1 for top-left of a2
+#     y (int): Row index in a1 for top-left of a2
+#     rotate (int): Rotation in degrees (must be 0, 90, 180, 270)
+#     flip_h (bool): Flip horizontally (left-right)
+#     flip_v (bool): Flip vertically (up-down)
+#-------------------------------------------------------------
+def blit(a1: np.ndarray, a2: np.ndarray, x: int, y: int, rotate: int, flip_h: bool, flip_v: bool) -> bool:
+
+    # Copy a2 so we don’t modify the original
+    arr = a2.copy()
+
+    # ---- Apply rotation ----
+    if rotate not in (0, 90, 180, 270):
+        raise ValueError("rotate must be 0, 90, 180, or 270")
+    k = rotate // 90
+    if k:
+        arr = np.rot90(arr, k=k)  # rotates counter-clockwise
+
+    # ---- Apply flips ----
+    if flip_h:
+        arr = np.fliplr(arr)
+    if flip_v:
+        arr = np.flipud(arr)
+
+    # ---- Bounds check ----
+    h,w = arr.shape
+    if y + h > a1.shape[0] or x + w > a1.shape[1]:
+        raise ValueError("Transformed a2 does not fit inside a1 at the given location")
+
+    # ---- Copy into a1 ----
+    a1[y:y + h, x:x + w] = arr
+
+#-------------------------------------------------------------
+def solve(blocks, setup):
+	print('--------', setup)
+	
+	arr = np.zeros((setup.height, setup.width), dtype=int)
+
+	# all blocks must be the same size
+	blockWidth = blocks[0].shape[1]
+	blockHeight = blocks[0].shape[0]
+	assert(blockWidth == block.shape[1] for block in blocks)
+	assert(blockHeight == block.shape[0] for block in blocks)
+
+	#--- incredibly naive: place blocks in rows, use dumb block selection
+	y = 0
+	blocksRemaining = copy.copy(setup.quantities)
+	while y <= setup.height - blockHeight:
+		if not any(blocksRemaining):
+			print('SUCCEEDED')
+			return True
+		
+		blockNumber = 0
+		while blocksRemaining[blockNumber] == 0 and blockNumber < len(blocksRemaining):
+			blockNumber += 1
+		assert(blockNumber < len(blocksRemaining))
+
+		x = setup.width - blockWidth
+		if has_overlap(arr, blocks[blockNumber], x, y, rotate=0, flip_h=False, flip_v=False):
+			y += blockHeight
+			continue
+		while x > 0 and not has_overlap(arr, blocks[blockNumber], x - 1, y, rotate=0, flip_h=False, flip_v=False):
+			x -= 1
+		
+		blit(arr, blocks[blockNumber], x, y, rotate=0, flip_h=False, flip_v=False)
+		blocksRemaining[blockNumber] -= 1
+		print('placed', blockNumber, 'at', x, y)
+
+	print('FAILED')
+	return False
+
+#-------------------------------------------------------------
 def go(lines, part):
 
 	blocks = []
@@ -1137,6 +1238,9 @@ def go(lines, part):
 		i += 1
 
 	result = 0
+	for setup in setups:
+		result += solve(blocks, setup)
+
 	print(result)
 	return result
 
