@@ -1146,15 +1146,16 @@ def blit(a1: np.ndarray, a2: np.ndarray, x: int, y: int, rotate: int, flip_h: bo
 #-------------------------------------------------------------
 def solve(blocks, setup):
 	print('--------', setup)
-	
+
 	arr = np.zeros((setup.height, setup.width), dtype=int)
 
-	# all blocks must be the same size
+	# all blocks must be the same size, and square
 	blockWidth = blocks[0].shape[1]
 	blockHeight = blocks[0].shape[0]
+	assert(blockWidth == blockHeight)
 	assert(blockWidth == block.shape[1] for block in blocks)
 	assert(blockHeight == block.shape[0] for block in blocks)
-
+	
 	#--- incredibly naive: place blocks in rows, use dumb block selection
 	y = 0
 	blocksRemaining = copy.copy(setup.quantities)
@@ -1238,12 +1239,19 @@ def go(lines, part):
 		i += 1
 
 	result = 0
+#	for setup in setups:
+#		result += solve(blocks, setup)
+	
 	for setup in setups:
-		result += solve(blocks, setup)
+		total_ones = sum(np.count_nonzero(block) * quantity for block,quantity in zip(blocks, setup.quantities))
+		total_area = setup.width * setup.height
+		percent_filled = int(100 * total_ones / total_area)
+		if percent_filled < 100:
+			result += 1
 
 	print(result)
 	return result
 
 #-------------------------------------------------------------
 assert(go(testData, 1) >= 0)
-#assert(go(data, 1) >= 0)
+assert(go(data, 1) >= 0)
